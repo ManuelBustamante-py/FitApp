@@ -93,6 +93,8 @@ const base: NormalizedFood = {
   basis: "per_100g",
   license: "CC0 / dominio público",
   nutrients: { energy_kcal: 52, protein_g: 0.26 },
+  kcalCalculada: false,
+  portionsSinTraducir: [],
   portions: [
     { sourcePortionId: "10", labelEs: "1 unidad mediana", grams: 182 },
     { sourcePortionId: "11", labelEs: "1 taza, en rebanadas", grams: 109 },

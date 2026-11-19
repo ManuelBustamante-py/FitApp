@@ -9,6 +9,15 @@
  * gana la coincidencia más larga.
  */
 
+import {
+  MARCAS_EXTRA,
+  NEXOS_EXTRA,
+  NOMBRES_EXTRA,
+  MODIFICADORES_EXTRA,
+  SEGMENTOS_EXTRA,
+  SUSTANTIVOS_EXTRA,
+} from "./glossary-extra.ts";
+
 /**
  * Segmentos completos (texto entre comas). Tienen prioridad sobre la traducción
  * palabra a palabra. Valor vacío = el segmento se omite en español.
@@ -1274,3 +1283,83 @@ export const MODIFICADORES: Record<string, string> = {
   crisp: "crujiente",
   retail: "minorista",
 };
+
+/**
+ * Sustantivos genéricos: cuando abren el nombre ("Snacks, papas fritas, blancas"),
+ * la concordancia de los adjetivos que siguen se toma del siguiente sustantivo.
+ * Claves en inglés, como en SUSTANTIVOS.
+ */
+export const GENERICOS: ReadonlySet<string> = new Set([
+  "snacks",
+  "beverages",
+  "beverage",
+  "candies",
+  "candy",
+  "sweets",
+  "cereals",
+  "babyfood",
+  "baby food",
+  "fast foods",
+  "fast food",
+  "alcoholic beverage",
+  "alcoholic beverages",
+  "restaurant",
+  "spices",
+  "fish",
+  "crustaceans",
+  "mollusks",
+  "nuts",
+  "seeds",
+  "game meat",
+  "desserts",
+  "dessert",
+  "syrups",
+  "formulated bar",
+  "usda commodity",
+  "school lunch",
+  "puddings",
+]);
+
+/**
+ * Género de sustantivos españoles que la regla por terminación no resuelve.
+ * Clave: palabra núcleo (singular) en minúsculas.
+ */
+export const GENERO_ESPECIAL: Record<string, "m" | "f"> = {
+  mapa: "m",
+  día: "m",
+  cuscús: "m",
+  hummus: "m",
+  anís: "m",
+  tuna: "f",
+  foie: "m",
+};
+
+/** Palabras españolas que terminan en -s pero son singulares. */
+export const SINGULARES_EN_S: ReadonlySet<string> = new Set([
+  "cuscús",
+  "hummus",
+  "anís",
+  "pis",
+  "tos",
+  "lunes",
+  "cactus",
+  "iris",
+  "virus",
+  "jengibres",
+  "bonus",
+]);
+
+/**
+ * Marcas y nombres propios que se conservan tal cual (clave en minúsculas, valor con
+ * su escritura oficial). Una marca no cuenta como palabra sin traducir.
+ */
+/** Traducciones completas (nombre entero en minúsculas) para los casos que el glosario no resuelve. */
+export const NOMBRES: Record<string, string> = { ...NOMBRES_EXTRA };
+
+export const MARCAS: Record<string, string> = { ...MARCAS_EXTRA };
+
+// La ampliación tiene prioridad sobre las tablas base.
+Object.assign(NEXOS, NEXOS_EXTRA);
+Object.assign(SEGMENTOS, SEGMENTOS_EXTRA);
+Object.assign(SUSTANTIVOS, SUSTANTIVOS_EXTRA);
+Object.assign(MODIFICADORES, MODIFICADORES_EXTRA);

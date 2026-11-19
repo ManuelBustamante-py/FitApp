@@ -1,3 +1,7 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import { translateName } from "./translate.ts";
@@ -15,16 +19,16 @@ const row = (over: Partial<TranslationRow>): TranslationRow => ({
   source: "usda_fdc",
   sourceId: "1",
   nameEn: "Apples, raw",
-  nameEs: "Manzanas, crudo",
+  nameEs: "Manzanas, crudas",
   status: "borrador",
-  autoEs: "Manzanas, crudo",
+  autoEs: "Manzanas, crudas",
   ...over,
 });
 
 describe("parseTranslations", () => {
   it("lee el CSV y asume borrador si status está vacío", () => {
     const rows = parseTranslations(
-      HEADER + 'usda_fdc,1,"Apples, raw","Manzanas, crudas",,"Manzanas, crudo"\n',
+      HEADER + 'usda_fdc,1,"Apples, raw","Manzanas, crudas",,"Manzanas, crudas"\n',
     );
     expect(rows).toEqual([row({ nameEs: "Manzanas, crudas", status: "borrador" })]);
     expect(parseTranslations("")).toEqual([]);
@@ -68,15 +72,15 @@ describe("mergeTranslations", () => {
   it("agrega filas nuevas como borrador; name_es solo si la traducción es completa", () => {
     const { rows, stats } = mergeTranslations(
       [],
-      [candidate("1", "Apples, raw"), candidate("2", "Kumquats, raw")],
+      [candidate("1", "Apples, raw"), candidate("2", "Frobnicates, raw")],
     );
     expect(rows).toEqual([
       row({}),
       row({
         sourceId: "2",
-        nameEn: "Kumquats, raw",
+        nameEn: "Frobnicates, raw",
         nameEs: "",
-        autoEs: "[kumquats], crudo",
+        autoEs: "[frobnicates], crudos",
       }),
     ]);
     expect(stats.added).toBe(2);
@@ -101,7 +105,7 @@ describe("mergeTranslations", () => {
     expect(rows[0]).toEqual({
       ...edited,
       nameEn: "Apples, raw, with skin",
-      autoEs: "Manzanas, crudo, con piel",
+      autoEs: "Manzanas, crudas, con cáscara",
     });
     expect(stats.preserved).toBe(1);
   });
@@ -113,7 +117,7 @@ describe("mergeTranslations", () => {
       [auto, same],
       [candidate("1", "Apples, raw"), candidate("2", "Apples, raw")],
     );
-    expect(rows[0].nameEs).toBe("Manzanas, crudo");
+    expect(rows[0].nameEs).toBe("Manzanas, crudas");
     expect(stats).toMatchObject({ updated: 1, unchanged: 1 });
   });
 
@@ -128,7 +132,10 @@ describe("mergeTranslations", () => {
   });
 
   it("es idempotente: fusionar dos veces da el mismo CSV", () => {
-    const candidates = [candidate("1", "Apples, raw"), candidate("2", "Kumquats, raw")];
+    const candidates = [
+      candidate("1", "Apples, raw"),
+      candidate("2", "Frobnicates, raw"),
+    ];
     const first = mergeTranslations([], candidates).rows;
     const second = mergeTranslations(
       parseTranslations(formatTranslations(first)),
@@ -154,7 +161,7 @@ describe("resolveTranslation", () => {
   it("carga borradores salvo con --only-reviewed", () => {
     expect(resolveTranslation(row({}), false)).toEqual({
       ok: true,
-      nameEs: "Manzanas, crudo",
+      nameEs: "Manzanas, crudas",
       status: "borrador",
     });
     expect(resolveTranslation(row({}), true)).toEqual({
@@ -165,5 +172,50 @@ describe("resolveTranslation", () => {
       ok: true,
       status: "revisado",
     });
+  });
+});
+
+describe("translations.csv versionado", () => {
+  const path = join(dirname(fileURLToPath(import.meta.url)), "translations.csv");
+  const rows = parseTranslations(readFileSync(path, "utf8"));
+
+  it("tiene nombre en español para (casi) todas las filas y sin palabras marcadas como faltantes", () => {
+    expect(rows.length).toBeGreaterThan(13000);
+    expect(rows.filter((r) => r.nameEs === "")).toEqual([]);
+    expect(rows.filter((r) => /[[\]]/.test(r.nameEs))).toEqual([]);
+  });
+
+  it(
+    "los borradores automáticos coinciden con lo que genera hoy el glosario",
+    { timeout: 60_000 },
+    () => {
+      // Si este test falla, hay que volver a correr `npm run ingest:usda:translations`.
+      const stale = rows
+        .filter((r) => r.status === "borrador" && r.nameEs === r.autoEs)
+        .filter((r) => translateName(r.nameEn).text !== r.autoEs)
+        .map((r) => r.nameEn);
+      expect(stale).toEqual([]);
+    },
+  );
+
+  it("los revisados y los editados a mano no se tocan al regenerar", () => {
+    const candidate = (sourceId: string, nameEn: string) => ({
+      source: "usda_fdc",
+      sourceId,
+      nameEn,
+      auto: translateName(nameEn),
+    });
+    const reviewed = row({ nameEs: "Manzana revisada", status: "revisado", autoEs: "x" });
+    const edited = row({
+      sourceId: "2",
+      nameEs: "Mi nombre",
+      autoEs: "Manzanas, crudas",
+    });
+    const { rows: merged } = mergeTranslations(
+      [reviewed, edited],
+      [candidate("1", "Apples, raw"), candidate("2", "Apples, raw")],
+    );
+    expect(merged.find((r) => r.sourceId === "1")?.nameEs).toBe("Manzana revisada");
+    expect(merged.find((r) => r.sourceId === "2")?.nameEs).toBe("Mi nombre");
   });
 });

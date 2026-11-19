@@ -39,6 +39,23 @@ describe("ReportBuilder", () => {
     expect(text).toContain("… y 1 errores más");
   });
 
+  it("cuenta las kcal calculadas y las porciones descartadas", () => {
+    const builder = new ReportBuilder({ dryRun: true, onlyReviewed: false, dirs: [] });
+    builder.imported("usda_fdc", "borrador", {
+      kcalCalculada: true,
+      portions: 3,
+      untranslated: ["1 frob", "1 frob"],
+    });
+    builder.imported("usda_fdc", "borrador", { portions: 2, untranslated: ["1 zap"] });
+    const report = builder.build();
+    expect(report.kcalCalculada).toBe(1);
+    expect(report.porciones).toEqual({ importadas: 5, sinTraducir: 3 });
+    expect(report.porcionesSinTraducir).toEqual({ "1 frob": 2, "1 zap": 1 });
+    const text = formatReport(report);
+    expect(text).toContain("kcal calculadas (Atwater 4/4/9) en importados: 1");
+    expect(text).toContain("5 importadas, 3 descartadas");
+  });
+
   it("indica cuando es una simulación", () => {
     const report = new ReportBuilder({
       dryRun: true,

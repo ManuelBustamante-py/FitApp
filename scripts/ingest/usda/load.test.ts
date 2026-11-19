@@ -15,12 +15,14 @@ const food: NormalizedFood = {
   sourceId: "300",
   nameEs: "Leche entera",
   nameEn: "Milk, whole",
-  category: "Milk, whole",
+  category: "Leche entera",
   state: "na",
   basis: "per_100g",
   license: "CC0 / dominio público",
   nutrients: { protein_g: 3.27, energy_kcal: 60, unknown_code: 1 },
+  kcalCalculada: false,
   portions: [{ sourcePortionId: "30", labelEs: "1 taza", grams: 244 }],
+  portionsSinTraducir: [],
 };
 
 describe("chunk", () => {
@@ -39,7 +41,7 @@ describe("filas para Supabase", () => {
       name_en: "Milk, whole",
       brand: null,
       barcode: null,
-      category: "Milk, whole",
+      category: "Leche entera",
       state: "na",
       basis: "per_100g",
       density_g_ml: null,

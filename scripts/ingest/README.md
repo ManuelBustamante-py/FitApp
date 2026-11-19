@@ -40,7 +40,7 @@ Los nombres en español salen de `scripts/ingest/usda/translations.csv`, version
 | `status` | `borrador` (propuesto o editado, sin revisar) o `revisado` |
 | `auto_es` | Última propuesta automática; las palabras sin glosario van entre `[corchetes]` |
 
-Generar o actualizar el borrador (sin API externas; usa el glosario de `usda/glossary.ts` y reordena los nombres de USDA separados por comas, p. ej. *Chicken, broiler, breast, meat only, raw* → *Pollo, pechuga, solo carne, crudo*):
+Generar o actualizar el borrador (sin API externas; usa el glosario de `usda/glossary.ts` y `usda/glossary-extra.ts`, reordena los nombres de USDA separados por comas y concuerda género y número, p. ej. *Chicken, broiler, breast, meat only, raw* → *Pollo, pechuga, solo carne, crudo* y *Potatoes, raw* → *Papas, crudas*):
 
 ```bash
 npm run ingest:usda:translations -- scripts/ingest/data/usda
@@ -54,7 +54,18 @@ El comando **fusiona** con el CSV existente, nunca lo pisa:
 - Borradores automáticos → se actualizan con la nueva propuesta (útil al ampliar el glosario).
 - Filas que ya no vienen en los datos → se conservan.
 
-Al final muestra las palabras sin glosario más frecuentes: agregarlas a `glossary.ts` y volver a correr el comando mejora los borradores pendientes.
+Al final muestra las palabras sin glosario más frecuentes: agregarlas a `glossary-extra.ts` y volver a correr el comando mejora los borradores pendientes.
+
+**Cómo traduce el generador** (`usda/translate.ts`):
+
+- Cada sustantivo del glosario tiene género y número, que se infieren del núcleo español (`agreementOf`, con excepciones en `GENERO_ESPECIAL`). Los modificadores se guardan en masculino singular y se flexionan para concordar con el sustantivo núcleo (`inflectAdjective`): *Papas, crudo* → *Papas, crudas*; *bajo en grasa* → *baja en grasa*. Los segmentos que solo traen un adjetivo (", crudo") concuerdan con el núcleo del primer segmento; si ese núcleo es un genérico (*Snacks*, *Bebidas*, *Pescado*; lista `GENERICOS`), manda el siguiente sustantivo.
+- Los textos fijos de `SEGMENTOS` que empiezan con un participio concuerdan solos; con prefijo `~` se fuerza la concordancia de todas sus palabras en -o.
+- Sufijos ingleses como *tomato-based*, *chocolate coated*, *butter flavored*, *X-type* o *X only* pasan a prefijo + sustantivo (*a base de tomate*, *cubierto de chocolate*, *sabor a mantequilla*, *tipo X*, *solo X*).
+- Marcas y nombres propios: `MARCAS` (escritura oficial), segmentos en MAYÚSCULAS con palabras desconocidas (SR Legacy escribe así las marcas: *QUAKER*, *KRACKEL*), palabras en MAYÚSCULAS sueltas y con inicial mayúscula entre paréntesis (*(Navajo)*) se conservan sin marcarlas como faltantes.
+- `NOMBRES` (en `glossary-extra.ts`) permite fijar la traducción de un nombre completo que el glosario no resuelve bien.
+- Un segmento que repite al anterior como inicio (*Salsa, salsa mexicana*) lo reemplaza (*Salsa mexicana*).
+
+El test `translations.test.ts` comprueba que el CSV versionado no tenga nombres vacíos ni palabras entre corchetes y que los borradores automáticos coincidan con lo que genera el glosario actual: si agregas palabras al glosario, vuelve a correr el comando y haz commit del CSV.
 
 **Flujo de revisión:**
 
@@ -89,20 +100,21 @@ Opciones:
 | `--translations <csv>` | Otro diccionario de traducciones |
 | `--batch-size <n>` | Alimentos por lote de escritura (500 por defecto) |
 
-El informe en consola muestra importados, omitidos y errores (totales y por fuente), cuántos importados tienen traducción `revisado` o `borrador` y los omitidos por motivo:
+El informe en consola muestra importados, omitidos y errores (totales y por fuente), cuántos importados tienen traducción `revisado` o `borrador`, cuántos tienen las kcal calculadas (`kcalCalculada` en el JSON), cuántas porciones se importaron y cuántas se descartaron por no traducirse por completo (con la lista de etiquetas, `porcionesSinTraducir`), y los omitidos por motivo:
 
 - `sin_traduccion`: la fila no tiene `name_es` (nunca se carga con el nombre en inglés).
 - `no_revisado`: con `--only-reviewed`, la fila es `borrador`.
-- `sin_energia`: USDA no informa kcal para ese alimento (algunos de Foundation).
+- `sin_energia`: USDA no informa kcal para ese alimento y los macros no alcanzan para calcularlas (ver más abajo; algunos de Foundation, como porotos secos de laboratorio, frutas sin carbohidratos informados o la sal).
 - `duplicado`: el mismo `fdc_id` apareció en dos carpetas.
 
 Los errores son valores imposibles (kcal > 902/100 g, macros que suman más de 105 g/100 g…) o fallos al escribir. El comando termina con código 1 si hubo errores.
 
 ### Qué se carga
 
-- `food`: `name_es`, `name_en`, `category` (categorías FDC traducidas; las WWEIA de FNDDS quedan en inglés), `state` (`crudo`/`cocido` si el nombre en inglés lo dice, si no `na`), `basis = per_100g`, `source`, `source_id = fdc_id`, `license = 'CC0 / dominio público'`, `owner_user_id = null` (público).
+- `food`: `name_es`, `name_en`, `category` (categorías FDC y WWEIA traducidas; las WWEIA salen de `usda/categorias.ts`, un mapa revisado por descripción en inglés cuyo test falla si USDA agrega una categoría sin traducir), `state` (`crudo`/`cocido` si el nombre en inglés lo dice, si no `na`), `basis = per_100g`, `source`, `source_id = fdc_id`, `license = 'CC0 / dominio público'`, `owner_user_id = null` (público).
 - `food_nutrient`: los 11 nutrientes de `public.nutrient`, por 100 g. USDA ya informa por 100 g de porción comestible (también las bebidas). Se mapea por número de nutriente USDA, en orden de preferencia: energía 208 → 958 → 957 → 268 (kJ ÷ 4,184); carbohidratos 205 → 205.2; azúcares 269 → 269.3; fibra 291 → 293; grasas 204 → 298; proteínas 203; saturadas 606; trans 605; colesterol 601; sodio 307; alcohol 221. Las unidades se convierten a las de `public.nutrient` (g, mg, µg, kcal).
-- `food_portion`: porciones caseras de las tres fuentes (FNDDS: "1 cup", "1 medium"…; SR Legacy y Foundation: cantidad + unidad + modificador), con gramos > 0 y la etiqueta traducida por reglas (cup → taza, tbsp → cucharada, tsp → cucharadita, fl oz → onza líquida, slice → rebanada, "1 medium" → "1 unidad mediana"…). Se descartan "Quantity not specified", las cantidades guía y los pesos apareados de laboratorio.
+- **Energía calculada.** Si USDA no informa kcal (algunos Foundation), se calculan con Atwater 4/4/9 (`estimateEnergyKcal`): 4 kcal/g de proteínas y de carbohidratos y 9 kcal/g de grasas, y se cuentan aparte como `kcal_calculada` en el informe. Un macro ausente se toma como 0 solo si es razonable: carbohidratos ausentes se reemplazan por azúcares + fibra únicamente si suman 2 g/100 g o menos (si hay más, los carbohidratos existen y el alimento se omite como `sin_energia` en vez de subestimar sus kcal); proteínas o grasas ausentes se aceptan con al menos dos macros informados o en alimentos casi puros en grasa (≥ 50 g/100 g: aceites, mantequilla). La validación (> 902 kcal/100 g, macros que suman más de 105 g, etc.) se aplica igual al valor calculado.
+- `food_portion`: porciones caseras de las tres fuentes (FNDDS: "1 cup", "1 medium"…; SR Legacy y Foundation: cantidad + unidad + modificador), con gramos > 0. Se descartan "Quantity not specified", las cantidades guía y los pesos apareados de laboratorio. La etiqueta se traduce con el mismo glosario de alimentos más `usda/glossary-porciones.ts`: las unidades (taza, cucharada, onza, onza líquida, libra…) se pluralizan según la cantidad y los decimales llevan coma (*1 botella (4,2 onzas líquidas)*), los adjetivos concuerdan con el sustantivo (*1 rebanada grande o gruesa*, *1 unidad mediana*) y las dimensiones pasan a *de largo / de diámetro / de grosor*. Los nombres de marca (rachas de palabras con inicial mayúscula, p. ej. *Gerber Second Food*, *Earth's Best*) se dejan tal cual. **Solo se importan las etiquetas que quedan totalmente en español:** si queda alguna palabra sin traducir la porción se descarta y se informa en el reporte (`porcionesSinTraducir`); si la etiqueta supera los 80 caracteres de la base se le quitan las aclaraciones finales entre paréntesis y, si aun así no cabe, también se descarta. Con los datos actuales no se descarta ninguna.
 
 ### Idempotencia
 
