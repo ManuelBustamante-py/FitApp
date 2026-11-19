@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 
-select plan(22);
+select plan(24);
 
 -- ---------------------------------------------------------------------
 -- Datos de prueba (como postgres, que omite la RLS)
@@ -146,6 +146,19 @@ select ok(
   and not exists (select 1 from public.food where owner_user_id = '00000000-0000-0000-0000-00000000000a')
   and not exists (select 1 from public.meal_entry where user_id = '00000000-0000-0000-0000-00000000000a'),
   'Borrar la cuenta elimina perfil, alimentos privados y comidas'
+);
+
+-- ---------------------------------------------------------------------
+-- Catálogo de actividades (seed de la tarea #9)
+-- ---------------------------------------------------------------------
+select ok(
+  (select count(*) from public.activity_type where code <> 'test_bike') >= 30,
+  'El catálogo de actividades trae el seed con valores MET'
+);
+select is(
+  (select met from public.activity_type where code = 'bici_estatica_moderada'),
+  6.8::numeric,
+  'La bicicleta estática moderada usa el MET del Compendium (02012)'
 );
 
 select * from finish();
