@@ -105,7 +105,7 @@ describe("mergeTranslations", () => {
     expect(rows[0]).toEqual({
       ...edited,
       nameEn: "Apples, raw, with skin",
-      autoEs: "Manzanas, crudas, con piel",
+      autoEs: "Manzanas, crudas, con cáscara",
     });
     expect(stats.preserved).toBe(1);
   });

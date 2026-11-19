@@ -123,6 +123,7 @@ export const SEGMENTOS_EXTRA: Record<string, string> = {
   "may contain additives to retain moisture":
     "puede contener aditivos para retener humedad",
   "queso anejo": "Queso añejo",
+  "no sodium added": "sin sodio agregado",
   // FIN_SEGMENTOS
 };
 
@@ -1639,6 +1640,15 @@ export const SUSTANTIVOS_EXTRA: Record<string, string> = {
   "fiddlehead ferns": "brotes de helecho",
   back: "espalda",
   "key lime": "lima key",
+  "hot chocolate": "chocolate caliente",
+  "hot cocoa": "cacao caliente",
+  "hot cereal": "cereal caliente",
+  "hot tea": "té caliente",
+  "hot coffee": "café caliente",
+  "hot water": "agua caliente",
+  "hot fudge": "fudge caliente",
+  chips: "chips",
+  chip: "chip",
   // FIN_SUSTANTIVOS
 };
 
@@ -2072,6 +2082,8 @@ export const MODIFICADORES_EXTRA: Record<string, string> = {
   glandless: "sin glándulas",
   parmigiana: "a la parmesana",
   veggie: "vegetariano",
+  hot: "picante",
+  "all natural": "100 % natural",
   // FIN_MODIFICADORES
 };
 
@@ -2324,6 +2336,9 @@ export const MARCAS_EXTRA: Record<string, string> = {
   "uncle sam": "Uncle Sam",
   frito: "Frito",
   "frito's": "Frito's",
+  "hot pockets": "Hot Pockets",
+  "hot pocket": "Hot Pocket",
+  "hot ' n juicy": "Hot 'N Juicy",
   // FIN_MARCAS
 };
 

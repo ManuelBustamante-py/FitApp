@@ -50,7 +50,7 @@ describe("translateName", () => {
   describe("concordancia de género y número", () => {
     it.each([
       ["Potatoes, raw", "Papas, crudas"],
-      ["Apples, raw, with skin", "Manzanas, crudas, con piel"],
+      ["Apples, raw, with skin", "Manzanas, crudas, con cáscara"],
       ["Milk, whole", "Leche, entera"],
       ["Carrots, frozen, cooked with oil", "Zanahorias, congeladas, cocidas con aceite"],
       ["Onions, cooked, no added fat", "Cebollas, cocidas, sin grasa agregada"],
@@ -132,6 +132,31 @@ describe("translateName", () => {
     expect(translateName("Ice cream bar, chocolate coated").text).toContain(
       "cubierta de chocolate",
     );
+  });
+
+  describe("contexto del alimento y retoques finales", () => {
+    it.each([
+      ["Peppers, hot, raw", "Ají, crudo"],
+      ["Peppers, hot chili, green, raw", "Ají, verde, crudo"],
+      ["Peppers, banana, raw", "Pimentones, plátano, crudos"],
+      ["Hot chocolate / cocoa, NFS", "Chocolate caliente, sin especificar"],
+      ["Sauce, hot chile, sriracha", "Salsa, ají picante, sriracha"],
+      ["Potatoes, russet, flesh and skin, raw", "Papas, russet, pulpa y cáscara, crudas"],
+      ["Apples, raw, with skin", "Manzanas, crudas, con cáscara"],
+      ["Chicken, thigh, meat and skin, raw", "Pollo, trutro largo, carne y piel, crudo"],
+      ["Chicken, breast, with skin, raw", "Pollo, pechuga, con piel, crudo"],
+      ["Milk, whole, 3.25% milkfat", "Leche, entera, 3,25 % de materia grasa"],
+      ["Snacks, banana chips", "Snacks, chips de plátano"],
+      ["Snacks, potato chips, plain", "Snacks, papas fritas, naturales"],
+      ["Cereal, other, chocolate", "Cereal de chocolate, otro"],
+      ["Cereal, other, plain", "Cereal natural, otro"],
+      [
+        "Milk, dry, nonfat, regular, without added vitamin A and vitamin D",
+        "Leche, seca, descremada, normal, sin vitaminas A y D agregadas",
+      ],
+    ])("%s → %s", (en, es) => {
+      expect(translateName(en).text).toBe(es);
+    });
   });
 
   it("convierte los grados 'proof' en porcentaje de alcohol", () => {

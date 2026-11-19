@@ -393,7 +393,54 @@ interface NameState {
   locked: boolean;
   /** Fragmentos sueltos: la concordancia sigue siempre al último sustantivo núcleo. */
   follow?: boolean;
+  /** Glosario propio del contexto (frutas y verduras, ajíes). */
+  overlay?: Overlay;
+  /** Segmentos fijos propios del contexto; tienen prioridad sobre SEGMENTOS. */
+  segmentos?: Readonly<Record<string, string>>;
 }
+
+/** Alimentos vegetales: su "skin" es "cáscara" y su "flesh" es "pulpa" (en aves y pescados, "piel" y "carne"). */
+const PLANTAS =
+  /\b(potato|potatoes|sweet potato|sweet potatoes|apple|apples|squash|apricot|apricots|cucumber|pear|pears|plum|plums|watermelon|lemon|lemons|orange|oranges|grape|grapes|peach|peaches|melon|melons|tomato|tomatoes|pumpkin|mango|banana|bananas|eggplant|zucchini|carrot|carrots|yam|yams|beet|beets|nectarine|nectarines|pineapple|avocado|persimmons?|plantains?|tangerines?|grapefruit|limes?|cherry|cherries|kiwi|figs?|taro|cassava|turnips?)\b/;
+
+const PLANTA_OVERLAY: Overlay = {
+  nouns: {
+    skin: "cáscara",
+    peel: "cáscara",
+    flesh: "pulpa",
+    "orange flesh": "pulpa naranja",
+  },
+  mods: {
+    "yellow fleshed": "de pulpa amarilla",
+    "white fleshed": "de pulpa blanca",
+    "orange fleshed": "de pulpa naranja",
+  },
+};
+
+const PLANTA_SEGMENTOS: Readonly<Record<string, string>> = {
+  "flesh and skin": "pulpa y cáscara",
+  "skin eaten": "con cáscara",
+  "skin not eaten": "sin cáscara",
+  "skin only": "solo cáscara",
+  "flesh only": "solo pulpa",
+  "peel eaten": "con cáscara",
+  "peel not eaten": "sin cáscara",
+};
+
+/** "Peppers, hot chili": en Chile son ajíes (y "picante" sobra). */
+const AJI_OVERLAY: Overlay = {
+  nouns: {
+    pepper: "ají",
+    peppers: "ají",
+    chili: "ají",
+    chile: "ají",
+    chilies: "ají",
+    chiles: "ají",
+  },
+  mods: { hot: "" },
+  seps: {},
+};
+const AJI_SEGMENTO = /^(hot|chil[ie]|jalape|serrano|ancho|cayenne|habanero)/i;
 
 /**
  * Ordena un grupo de sustantivos y modificadores al orden español, con concordancia:
@@ -512,6 +559,7 @@ function agreeParticiples(text: string, agr: Agreement): string {
 
 function translateSegment(segment: string, missing: string[], state: NameState): string {
   const key = segment.toLowerCase();
+  if (state.segmentos && key in state.segmentos) return state.segmentos[key];
   if (key in SEGMENTOS) {
     const value = SEGMENTOS[key];
     return value.startsWith("~")
@@ -556,7 +604,10 @@ function translateSegment(segment: string, missing: string[], state: NameState):
   const local: string[] = [];
   const saved = { ...state };
   const proper = properWords(segment);
-  const text = arrange(toUnits(tokenize(key, undefined, proper), local, proper), state);
+  const text = arrange(
+    toUnits(tokenize(key, state.overlay, proper), local, proper, state.overlay),
+    state,
+  );
   if (allCaps) {
     // Segmento en mayúsculas con palabras desconocidas: es una marca; se conserva.
     const unknown: string[] = [];
@@ -575,15 +626,54 @@ function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/** Retoques finales sobre el texto en español: decimales, porcentajes y vitaminas. */
+function polish(text: string): string {
+  return text
+    .replace(/(\d)\.(\d)/g, "$1,$2")
+    .replace(/(\d)\s*%/g, "$1 %")
+    .replace(/materia grasa láctea/g, "materia grasa")
+    .replace(
+      /(\d(?:,\d+)?) % (humedad|materia grasa|grasa|proteína|azúcar)/g,
+      "$1 % de $2",
+    )
+    .replace(
+      /\b(con|sin) vitamina ([A-E]) agregada y vitamina ([A-E])\b(?! agregada)/g,
+      "$1 vitaminas $2 y $3 agregadas",
+    )
+    .replace(/vitamina ([A-E]) y vitamina ([A-E])\b/g, "vitaminas $1 y $2");
+}
+
 /** Traduce un nombre de USDA con el glosario. */
 export function translateName(nameEn: string): NameTranslation {
   const full = NOMBRES[nameEn.trim().toLowerCase()];
   if (full !== undefined) return { text: full, complete: true, missing: [] };
   const missing: string[] = [];
   const state: NameState = { agr: { gender: "m", plural: false }, locked: false };
-  const parts = splitSegments(nameEn)
-    .map((segment) => translateSegment(segment, missing, state))
-    .filter((part) => part !== "");
+  const segments = splitSegments(nameEn);
+  const first = (segments[0] ?? "").toLowerCase();
+  if (PLANTAS.test(first)) {
+    state.overlay = PLANTA_OVERLAY;
+    state.segmentos = PLANTA_SEGMENTOS;
+  } else if (
+    segments.some((s) => /^peppers?$/i.test(s)) &&
+    segments.some((s, i) => i > 0 && AJI_SEGMENTO.test(s))
+  ) {
+    state.overlay = AJI_OVERLAY;
+  }
+  let parts: string[];
+  const second = segments[1]?.toLowerCase();
+  if (segments.length === 3 && second === "other" && !/^nfs$/i.test(segments[2])) {
+    // "Cereal, other, chocolate" → "Cereal de chocolate, otro".
+    const a = translateSegment(segments[0], missing, state);
+    const units = toUnits(tokenize(segments[2].toLowerCase()), [], new Set());
+    const b = translateSegment(segments[2], missing, state);
+    const nounOnly = units.length > 0 && units.every((u) => u.kind === "noun");
+    parts = [`${a} ${nounOnly ? "de " : ""}${b}`, "otro"];
+  } else {
+    parts = segments
+      .map((segment) => translateSegment(segment, missing, state))
+      .filter((part) => part !== "");
+  }
   // Segmentos repetidos tras traducir (p. ej. "magro" dos veces) se dejan una vez.
   const distinct = parts.filter((part, i) => parts.indexOf(part) === i);
   // "Salsa, salsa mexicana" → "Salsa mexicana": un segmento que repite al anterior como
@@ -598,7 +688,7 @@ export function translateName(nameEn: string): NameTranslation {
       (b.length === a.length || /^[\s(]/.test(b.slice(a.length)))
     );
   });
-  const text = capitalize(unique.join(", "));
+  const text = polish(capitalize(unique.join(", ")));
   return { text, complete: missing.length === 0 && text !== "", missing };
 }
 
