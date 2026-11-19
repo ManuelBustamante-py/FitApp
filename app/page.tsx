@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const navItems = [
   { label: "Hoy", icon: House },
   { label: "Comidas", icon: Utensils },
-  { label: "Ejercicio", icon: Activity },
+  { label: "Ejercicio", icon: Activity, href: "/ejercicio" },
   { label: "Peso", icon: Scale, href: "/peso" },
 ] as const;
 

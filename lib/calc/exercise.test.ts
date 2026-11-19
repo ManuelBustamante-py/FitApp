@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { mifflinStJeor } from "./bmr";
-import { keytelKcal, metKcal, netExerciseKcal, selectExerciseKcal } from "./exercise";
+import {
+  estimateExercise,
+  keytelKcal,
+  metKcal,
+  netExerciseKcal,
+  selectExerciseKcal,
+} from "./exercise";
 
 const referenceBmr = mifflinStJeor({
   sex: "male",
@@ -124,5 +130,51 @@ describe("selectExerciseKcal", () => {
       method: "machine",
     });
     expect(selectExerciseKcal({})).toBeNull();
+  });
+});
+
+describe("estimateExercise", () => {
+  const base = {
+    sex: "male",
+    ageYears: 23,
+    weightKg: 101,
+    bmr: referenceBmr,
+    met: 7,
+    durationMin: 17,
+  } as const;
+
+  it("HU-02: 17 min a 137 lpm ≈ 228 kcal por pulso, junto a las 77 de la máquina", () => {
+    const result = estimateExercise({ ...base, hrAvg: 137, machineKcal: 77 });
+    expect(result.hr?.kcal).toBeCloseTo(227.75, 1);
+    expect(result.hr?.reliable).toBe(true);
+    expect(result.met).toBeCloseTo(200.32, 2);
+    expect(result.machine).toBe(77);
+    expect(result.selected.method).toBe("hr");
+    expect(result.selected.kcal).toBeCloseTo(227.75, 1);
+    expect(result.netKcal).toBeCloseTo(204.21, 1);
+  });
+
+  it("sin pulso usa MET (aunque haya valor de máquina)", () => {
+    const result = estimateExercise({ ...base, hrAvg: null, machineKcal: 77 });
+    expect(result.hr).toBeNull();
+    expect(result.selected).toEqual({ kcal: result.met, method: "met" });
+    expect(result.netKcal).toBeCloseTo(200.32 - (referenceBmr / 1440) * 17, 1);
+  });
+
+  it("sin pulso ni máquina", () => {
+    const result = estimateExercise(base);
+    expect(result.machine).toBeNull();
+    expect(result.selected.method).toBe("met");
+  });
+
+  it("pulso fuera de 90–150: se usa, marcado como baja confianza", () => {
+    const result = estimateExercise({ ...base, hrAvg: 165 });
+    expect(result.selected.method).toBe("hr");
+    expect(result.hr?.reliable).toBe(false);
+  });
+
+  it("rechaza datos inválidos", () => {
+    expect(() => estimateExercise({ ...base, durationMin: 0 })).toThrow(RangeError);
+    expect(() => estimateExercise({ ...base, machineKcal: -1 })).toThrow(RangeError);
   });
 });

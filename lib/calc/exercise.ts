@@ -87,3 +87,57 @@ export function selectExerciseKcal(
   }
   return null;
 }
+
+export interface ExerciseEstimateInput {
+  sex: Sex;
+  ageYears: number;
+  weightKg: number;
+  /** TMB (kcal/día) para descontar el reposo del tiempo de la sesión. */
+  bmr: number;
+  /** MET de la actividad (catálogo). */
+  met: number;
+  durationMin: number;
+  hrAvg?: number | null;
+  machineKcal?: number | null;
+}
+
+export interface ExerciseEstimate {
+  /** Estimación por pulso (Keytel); null si no se ingresó el pulso promedio. */
+  hr: KeytelResult | null;
+  /** Estimación por MET. */
+  met: number;
+  /** Valor de la consola, como referencia; null si no se ingresó. */
+  machine: number | null;
+  /** Gasto bruto elegido (pulso → MET → máquina) y su método. */
+  selected: { kcal: number; method: KcalMethod };
+  /** Gasto neto: bruto elegido − TMB/1440 × minutos (docs/03 §4.4). */
+  netKcal: number;
+}
+
+/**
+ * Las tres cifras de una sesión, la elegida y el gasto neto (docs/03 §4,
+ * RF-11 y RF-12). El pulso fuera de 90–150 lpm se usa igual, pero queda
+ * marcado como baja confianza en `hr.reliable`.
+ */
+export function estimateExercise(input: ExerciseEstimateInput): ExerciseEstimate {
+  const { sex, ageYears, weightKg, bmr, met, durationMin, hrAvg, machineKcal } = input;
+  assertPositive(durationMin, "durationMin");
+  const hr =
+    hrAvg == null ? null : keytelKcal({ sex, hrAvg, weightKg, ageYears, durationMin });
+  const metEstimate = metKcal(met, weightKg, durationMin);
+  if (machineKcal != null) assertNonNegative(machineKcal, "machineKcal");
+  const machine = machineKcal ?? null;
+  // Con MET siempre presente, la selección nunca es null.
+  const selected = selectExerciseKcal({
+    hr: hr?.kcal,
+    met: metEstimate,
+    machine,
+  }) as { kcal: number; method: KcalMethod };
+  return {
+    hr,
+    met: metEstimate,
+    machine,
+    selected,
+    netKcal: netExerciseKcal(selected.kcal, bmr, durationMin),
+  };
+}
