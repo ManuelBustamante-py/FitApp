@@ -17,3 +17,7 @@ scripts/ingest/data/
 next-env.d.ts
 *.pem
 .pnp.*
+
+# Supabase CLI (archivos locales)
+supabase/.temp/
+supabase/.branches/
