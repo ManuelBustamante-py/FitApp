@@ -58,3 +58,15 @@ export async function listRecentWorkouts(userId: string) {
   if (error) throw new Error("No se pudieron leer tus sesiones.");
   return data;
 }
+
+/** Plantillas de sesión del usuario (RF-13), de la más nueva a la más antigua. */
+export async function listTemplates(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("workout_template")
+    .select("id, name, activity_type_id, duration_min, activity_type (name_es)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error("No se pudieron leer tus plantillas.");
+  return data;
+}

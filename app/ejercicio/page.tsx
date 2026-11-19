@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TemplateList } from "@/components/workout/template-list";
 import { WorkoutForm } from "@/components/workout/workout-form";
 import type { KcalMethod } from "@/lib/calc";
 import { getCurrentUser } from "@/lib/db/server";
@@ -19,6 +20,7 @@ import {
   getBodyData,
   listActivityTypes,
   listRecentWorkouts,
+  listTemplates,
 } from "@/lib/workout/queries";
 
 import { deleteWorkout } from "./actions";
@@ -47,10 +49,11 @@ async function WorkoutContent() {
   const { profile } = bundle;
 
   const today = todayIn(profile.timezone);
-  const [activities, body, sessions] = await Promise.all([
+  const [activities, body, sessions, templates] = await Promise.all([
     listActivityTypes(),
     getBodyData(user.id),
     listRecentWorkouts(user.id),
+    listTemplates(user.id),
   ]);
   const context = exerciseContext(profile, body.weightKg, body.bodyFatPct, today);
 
@@ -87,6 +90,17 @@ async function WorkoutContent() {
           )}
         </CardContent>
       </Card>
+
+      <section aria-labelledby="plantillas" className="flex flex-col gap-2">
+        <h2 id="plantillas" className="text-base font-semibold">
+          Plantillas
+        </h2>
+        <TemplateList
+          templates={templates}
+          activities={activities}
+          canRegister={context !== null}
+        />
+      </section>
 
       <section aria-labelledby="recientes" className="flex flex-col gap-2">
         <h2 id="recientes" className="text-base font-semibold">
