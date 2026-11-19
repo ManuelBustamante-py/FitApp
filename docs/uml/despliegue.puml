@@ -1,0 +1,44 @@
+@startuml despliegue
+title FitApp - Diagrama de despliegue
+
+node "Celular del usuario" {
+  artifact "PWA instalada\n(navegador)" as PWA
+}
+
+cloud "Vercel" {
+  node "Edge / CDN" {
+    artifact "Assets estáticos"
+  }
+  node "Funciones serverless (Node)" {
+    artifact "Next.js server\n(Server Actions)" as NX
+  }
+}
+
+cloud "Supabase (región us-east / sa-east)" {
+  node "Postgres" as PG
+  node "Auth (GoTrue)" as AU
+  node "Storage (S3)" as ST
+}
+
+node "GitHub" {
+  artifact "Repo FitApp"
+  artifact "GitHub Actions\n(lint, test, ingest)" as GA
+}
+
+cloud "APIs externas" {
+  node "USDA FDC"
+  node "Open Food Facts"
+  node "API de Claude (fase 5)"
+}
+
+PWA --> NX : HTTPS
+PWA --> AU : HTTPS (sesión)
+NX --> PG : SQL / PostgREST
+NX --> ST
+NX --> "API de Claude (fase 5)"
+GA --> PG : migraciones + ETL\n(service_role)
+GA --> "USDA FDC" : descarga masiva
+GA --> "Open Food Facts" : volcado
+"Repo FitApp" --> GA
+"Repo FitApp" --> NX : deploy automático
+@enduml

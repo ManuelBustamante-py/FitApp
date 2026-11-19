@@ -1,0 +1,32 @@
+@startuml secuencia-registro-comida
+title FitApp - Secuencia: registrar un alimento en una comida
+autonumber
+
+actor Usuario as U
+participant "PWA (Next.js client)" as UI
+participant "Server Action\nmeals.addItem" as SA
+participant "lib/calc\nnutrition" as CALC
+database "Supabase\nPostgres (RLS)" as DB
+
+U -> UI : Escribe "arroz cocido"
+UI -> DB : search_foods(q, limit 20)\n(pg_trgm + unaccent)
+DB --> UI : Resultados (propios y públicos)
+U -> UI : Elige "Arroz blanco, cocido"\ningresa 180 g, comida = Almuerzo
+UI -> UI : Valida con Zod
+UI -> SA : addItem(food_id, 180, "g", "LUNCH", fecha)
+SA -> DB : SELECT food + food_nutrient + porción
+DB --> SA : kcal/100 g = 130, P 2,7, C 28, G 0,3
+SA -> CALC : nutrientsFor(per100, gramos = 180)
+CALC --> SA : 234 kcal, P 4,9, C 50,4, G 0,5
+SA -> DB : upsert meal_entry (user, día, LUNCH)
+SA -> DB : insert meal_item (instantánea de nutrientes)
+DB --> SA : OK
+SA --> UI : Ítem + totales del día actualizados
+UI --> U : Muestra anillo de kcal y balance del día
+
+alt Alimento no encontrado
+  U -> UI : "Crear alimento"
+  UI -> SA : createFood(etiqueta por 100 g)
+  SA -> DB : insert food (owner_user_id = auth.uid())
+end
+@enduml

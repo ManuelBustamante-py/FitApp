@@ -1,0 +1,34 @@
+# FitApp
+
+Plataforma web instalable en el celular (PWA) para llevar el **balance calórico diario**: lo que se come, lo que se gasta en el ejercicio y cómo evoluciona el peso y el IMC hacia una meta saludable.
+
+> FitApp entrega **estimaciones** y no reemplaza la indicación de un profesional de la salud.
+
+## Funcionalidades previstas
+
+| Módulo | Qué hace |
+|---|---|
+| Perfil y cuerpo | Registro de peso, IMC (kg/m²), metabolismo basal y gasto diario estimado, meta de peso |
+| Ejercicio | Registro de sesiones (máquina, minutos, distancia, kcal de la máquina, pulso promedio, mínimo y máximo) y estimación propia del gasto según pulso y MET |
+| Alimentación | Búsqueda de alimentos (USDA, Open Food Facts, tabla chilena), registro por **gramos o ml**, recetas propias, código de barras |
+| Balance | Déficit o superávit diario y semanal, tendencias y proyección hacia la meta |
+| IA (fase posterior) | Identificar el alimento a partir de una foto o de texto libre; el usuario siempre confirma los gramos |
+
+## Stack
+
+Next.js (App Router, TypeScript) · Supabase (Postgres, Auth, Storage) · Tailwind CSS · Vercel. Detalle en [docs/05-arquitectura.md](docs/05-arquitectura.md).
+
+## Documentación
+
+| # | Documento |
+|---|---|
+| 01 | [Visión y alcance](docs/01-vision-y-alcance.md) |
+| 02 | [Requisitos e historias de usuario](docs/02-requisitos.md) |
+| 03 | [Cálculos y fórmulas](docs/03-calculos-y-formulas.md) |
+| 04 | [Fuentes de datos nutricionales](docs/04-fuentes-de-datos.md) |
+| 05 | [Arquitectura](docs/05-arquitectura.md) |
+| 06 | [Modelo de datos](docs/06-modelo-de-datos.md) |
+| 07 | [Roadmap](docs/07-roadmap.md) |
+| — | [Diagramas UML (PlantUML)](docs/uml/) · [Decisiones de arquitectura (ADR)](docs/adr/) |
+
+La gestión de tareas está en el tablero **FitApp** de Gesti.

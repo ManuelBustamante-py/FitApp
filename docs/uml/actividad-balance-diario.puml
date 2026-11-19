@@ -1,0 +1,38 @@
+@startuml actividad-balance-diario
+title FitApp - Actividad: cálculo del balance diario
+start
+:Obtener el día según la zona horaria del perfil;
+:Obtener el peso vigente (última medición <= día);
+if (¿Hay peso registrado?) then (sí)
+else (no)
+  :Pedir el registro de peso;
+  stop
+endif
+:TMB = fórmula elegida en el perfil\n(Mifflin por defecto | Harris-Benedict | Katch-McArdle | Cunningham | medida);
+if (¿Hay un ajuste para este día (daily_activity)?) then (sí)
+  :regla = ajuste del día;
+else (no)
+  :regla = semana tipo[día de la semana];
+endif
+if (¿regla.mode = STEPS?) then (pasos)
+  :factor = 1,2 (sedentario);
+  :kcal_pasos = max(0, pasos − umbral) × largo_paso × peso × 0,5 / 1000;
+else (nivel)
+  :factor = factor del nivel (o personalizado);
+  :kcal_pasos = 0;
+endif
+:ejercicio = Σ kcal_net de workout_session del día;
+:TDEE_día = TMB × factor + kcal_pasos + ejercicio;
+:ingesta = Σ kcal de meal_item del día;
+:balance = ingesta − TDEE_día;
+if (¿balance < 0?) then (déficit)
+  :Mostrar el déficit en verde;
+  if (¿ingesta < mínimo seguro?) then (sí)
+    :Advertencia: ingesta muy baja,\nconsultar a un profesional;
+  endif
+else (superávit)
+  :Mostrar el superávit en ámbar;
+endif
+:Actualizar el acumulado semanal y la proyección a la meta;
+stop
+@enduml

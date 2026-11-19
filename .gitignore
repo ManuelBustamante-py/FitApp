@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+.env
+.env*.local
+.vercel/
+*.log
+.DS_Store
+Thumbs.db
+# datos crudos de ingesta (pesados)
+scripts/ingest/data/

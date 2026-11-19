@@ -1,0 +1,74 @@
+@startuml casos-de-uso
+title FitApp - Diagrama de casos de uso
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Usuario" as U
+actor "Fuentes de datos\n(USDA, OFF, tabla CL)" as DS <<sistema>>
+actor "Servicio IA\n(visión)" as AI <<sistema>>
+actor "Administrador" as ADM
+
+rectangle FitApp {
+  package "Cuenta" {
+    usecase "Registrarse / iniciar sesión" as UC1
+    usecase "Configurar perfil" as UC2
+    usecase "Definir meta de peso/IMC" as UC3
+  }
+  package "Cuerpo" {
+    usecase "Registrar peso" as UC4
+    usecase "Calcular IMC y categoría" as UC5
+    usecase "Calcular BMR / TDEE" as UC6
+  }
+  package "Ejercicio" {
+    usecase "Registrar sesión de ejercicio" as UC7
+    usecase "Estimar kcal por pulso" as UC8
+    usecase "Estimar kcal por MET" as UC9
+    usecase "Usar plantilla de sesión" as UC10
+  }
+  package "Alimentación" {
+    usecase "Buscar alimento" as UC11
+    usecase "Registrar comida (g / ml / porción)" as UC12
+    usecase "Crear alimento personalizado" as UC13
+    usecase "Crear receta" as UC14
+    usecase "Escanear código de barras" as UC15
+    usecase "Identificar alimento por foto" as UC16
+  }
+  package "Balance" {
+    usecase "Ver balance diario" as UC17
+    usecase "Ver tendencias y proyección" as UC18
+  }
+  package "Datos" {
+    usecase "Importar base de alimentos" as UC19
+  }
+}
+
+U --> UC1
+U --> UC2
+U --> UC3
+U --> UC4
+U --> UC7
+U --> UC10
+U --> UC11
+U --> UC12
+U --> UC13
+U --> UC14
+U --> UC15
+U --> UC16
+U --> UC17
+U --> UC18
+ADM --> UC19
+
+UC4 ..> UC5 : <<include>>
+UC2 ..> UC6 : <<include>>
+UC7 ..> UC8 : <<include>>
+UC7 ..> UC9 : <<include>>
+UC10 ..> UC7 : <<extend>>
+UC12 ..> UC11 : <<include>>
+UC15 ..> UC12 : <<extend>>
+UC16 ..> UC12 : <<extend>>
+UC17 ..> UC6 : <<include>>
+
+UC19 -- DS
+UC15 -- DS
+UC16 -- AI
+@enduml

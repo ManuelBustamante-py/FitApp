@@ -1,0 +1,258 @@
+@startuml clases-dominio
+title FitApp - Modelo de dominio (clases)
+skinparam classAttributeIconSize 0
+hide empty members
+
+' ===== Enumeraciones =====
+enum Sex {
+  MALE
+  FEMALE
+}
+
+enum ActivityLevel {
+  BMR_ONLY (1,0)
+  SEDENTARY (1,2)
+  LIGHT (1,375)
+  MODERATE (1,55)
+  ACTIVE (1,725)
+  VERY_ACTIVE (1,9)
+  CUSTOM
+}
+
+enum BmrFormula {
+  MIFFLIN_ST_JEOR
+  HARRIS_BENEDICT_REV
+  KATCH_MCARDLE
+  CUNNINGHAM
+  MEASURED
+}
+
+enum DayMode {
+  LEVEL
+  STEPS
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  ONCE
+  DINNER
+  SNACK
+}
+
+enum KcalMethod {
+  HEART_RATE
+  MET
+  MACHINE
+}
+
+enum Unit {
+  G
+  ML
+  PORTION
+}
+
+enum FoodSource {
+  USDA
+  OFF
+  CL_TABLE
+  USER
+  RECIPE
+}
+
+enum FoodBasis {
+  PER_100G
+  PER_100ML
+}
+
+' ===== TMB (patrón Strategy) =====
+interface BmrStrategy {
+  +compute(sex, weightKg, heightCm, age, bodyFatPct): number
+}
+class MifflinStJeor
+class HarrisBenedictRevised
+class KatchMcArdle
+class Cunningham
+class MeasuredBmr
+
+BmrStrategy <|.. MifflinStJeor
+BmrStrategy <|.. HarrisBenedictRevised
+BmrStrategy <|.. KatchMcArdle
+BmrStrategy <|.. Cunningham
+BmrStrategy <|.. MeasuredBmr
+
+' ===== Actividad cotidiana =====
+class DayActivityRule {
+  mode: DayMode
+  level: ActivityLevel [0..1]
+  customFactor: number [0..1]
+  steps: number [0..1]
+  +factor(): number
+  +stepsKcal(weightKg, strideM, threshold): number
+}
+
+class WeeklySchedule {
+  +ruleFor(date, overrides): DayActivityRule
+}
+
+class DailyActivityOverride {
+  day: Date
+  mode: DayMode
+  level: ActivityLevel [0..1]
+  customFactor: number [0..1]
+  stepsActual: number [0..1]
+}
+
+' ===== Usuario y cuerpo =====
+class User {
+  id: UUID
+  email: string
+}
+
+class Profile {
+  sex: Sex
+  birthDate: Date
+  heightCm: number
+  bmrFormula: BmrFormula
+  bmrMeasuredKcal: number [0..1]
+  sedentaryStepsThreshold: number
+  strideM: number [0..1]
+  timezone: string
+  +age(): number
+  +bmr(weightKg, bodyFatPct): number
+  +tdeeDay(date, weightKg, exerciseNet): number
+}
+
+class Goal {
+  targetWeightKg: number
+  targetBmi: number
+  weeklyRateKg: number
+  startDate: Date
+  +dailyDeficitTarget(): number
+  +projectedDate(trend): Date
+}
+
+class BodyMeasurement {
+  measuredAt: DateTime
+  weightKg: number
+  waistCm: number [0..1]
+  bodyFatPct: number [0..1]
+  +bmi(heightCm): number
+  +bmiCategory(): string
+}
+
+' ===== Ejercicio =====
+class ActivityType {
+  code: string
+  nameEs: string
+  met: number
+}
+
+class WorkoutSession {
+  startedAt: DateTime
+  durationMin: number
+  distanceKm: number [0..1]
+  machineKcal: number [0..1]
+  hrAvg: number [0..1]
+  hrMin: number [0..1]
+  hrMax: number [0..1]
+  rpe: number [0..1]
+  kcalSelected: number
+  kcalMethod: KcalMethod
+  +kcalByHeartRate(profile, weightKg): number
+  +kcalByMet(weightKg): number
+  +kcalNet(bmr): number
+}
+
+' ===== Alimentación =====
+class Food {
+  nameEs: string
+  brand: string [0..1]
+  barcode: string [0..1]
+  state: string
+  basis: FoodBasis
+  densityGml: number [0..1]
+  source: FoodSource
+  license: string
+  +nutrientsFor(grams): Nutrients
+}
+
+class FoodPortion {
+  labelEs: string
+  grams: number
+}
+
+class Nutrients <<value>> {
+  kcal: number
+  proteinG: number
+  carbG: number
+  fatG: number
+  fiberG: number [0..1]
+  sodiumMg: number [0..1]
+}
+
+class Recipe {
+  name: string
+  cookedWeightG: number
+  +per100g(): Nutrients
+}
+
+class RecipeIngredient {
+  grams: number
+}
+
+class MealEntry {
+  eatenAt: DateTime
+  mealType: MealType
+  +totals(): Nutrients
+}
+
+class MealItem {
+  quantity: number
+  unit: Unit
+  gramsResolved: number
+  snapshot: Nutrients
+}
+
+' ===== Balance =====
+class DailyBalance <<service>> {
+  day: Date
+  intakeKcal: number
+  bmr: number
+  activityFactor: number
+  stepsKcal: number
+  exerciseNetKcal: number
+  +tdeeDay(): number
+  +balance(): number
+  +isDeficit(): boolean
+}
+
+' ===== Relaciones =====
+User "1" -- "1" Profile
+User "1" -- "0..*" Goal
+User "1" -- "0..*" BodyMeasurement
+User "1" -- "0..*" WorkoutSession
+User "1" -- "0..*" MealEntry
+User "1" -- "0..*" Recipe
+User "0..1" -- "0..*" Food : crea >
+
+Profile --> BmrStrategy : usa >
+Profile "1" *-- "1" WeeklySchedule
+WeeklySchedule "1" *-- "7" DayActivityRule
+WeeklySchedule "1" o-- "0..*" DailyActivityOverride
+
+WorkoutSession "0..*" --> "1" ActivityType
+Food "1" *-- "1" Nutrients : por 100 g/ml
+Food "1" *-- "0..*" FoodPortion
+Recipe "1" *-- "1..*" RecipeIngredient
+RecipeIngredient "0..*" --> "1" Food
+Recipe "1" --> "1" Food : genera >
+MealEntry "1" *-- "1..*" MealItem
+MealItem "0..*" --> "1" Food
+MealItem "0..*" --> "0..1" FoodPortion
+
+DailyBalance ..> MealEntry
+DailyBalance ..> WorkoutSession
+DailyBalance ..> Profile
+DailyBalance ..> BodyMeasurement
+@enduml

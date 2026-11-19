@@ -1,0 +1,27 @@
+@startuml secuencia-registro-ejercicio
+title FitApp - Secuencia: registrar una sesión de spinning
+autonumber
+
+actor Usuario as U
+participant "PWA" as UI
+participant "Server Action\nworkouts.create" as SA
+participant "lib/calc\nexercise" as CALC
+database "Supabase" as DB
+
+U -> UI : Bicicleta estática, 17 min, 5,6 km,\nconsola 77 kcal, pulso promedio 137 (130-145)
+UI -> SA : create(session)
+SA -> DB : Perfil (sexo, edad) + último peso + MET de la actividad
+DB --> SA : hombre, 23 años, 101 kg, MET 7,0
+SA -> CALC : kcalByHeartRate(137, 101, 23, hombre, 17)
+CALC --> SA : ~228 kcal (confianza alta: FC 90-150)
+SA -> CALC : kcalByMet(7,0, 101, 17)
+CALC --> SA : ~200 kcal
+SA -> CALC : select(pulso > MET > máquina)
+CALC --> SA : 228 kcal (método = HEART_RATE)
+SA -> CALC : kcalNet(228, BMR 1.994, 17 min)
+CALC --> SA : ~204 kcal netas
+SA -> DB : insert workout_session (las 3 estimaciones + netas)
+DB --> SA : OK
+SA --> UI : Sesión guardada
+UI --> U : "Gastaste ~228 kcal (máquina: 77).\nAporte al déficit: ~204 kcal"
+@enduml

@@ -1,0 +1,52 @@
+@startuml componentes
+title FitApp - Diagrama de componentes
+
+package "Next.js app" {
+  [UI: Dashboard] as Dash
+  [UI: Registro comidas] as MealsUI
+  [UI: Registro ejercicio] as WorkUI
+  [UI: Perfil / Cuerpo] as BodyUI
+  [Server Actions / Route Handlers] as API
+  [lib/calc\n(IMC, BMR, TDEE, kcal, balance)] as Calc
+  [lib/db\n(cliente Supabase tipado)] as Dal
+  [lib/ai\n(fase 5)] as AI
+  [Service Worker (PWA)] as SW
+}
+
+package "Supabase" {
+  [Auth] as Auth
+  database "Postgres\n(RLS, pg_trgm)" as PG
+  [Storage\n(fotos)] as ST
+}
+
+package "Ingesta (scripts)" {
+  [ETL USDA] as EU
+  [ETL Open Food Facts] as EO
+  [ETL Tabla chilena] as EC
+}
+
+cloud "Externos" {
+  [USDA FoodData Central] as USDA
+  [Open Food Facts] as OFF
+  [API de visión (Claude)] as VIS
+}
+
+Dash --> API
+MealsUI --> API
+WorkUI --> API
+BodyUI --> API
+API --> Calc
+API --> Dal
+API --> AI
+Dal --> PG
+API --> Auth
+AI --> VIS
+AI --> ST
+MealsUI ..> OFF : código de barras\n(fase 5)
+EU --> USDA
+EO --> OFF
+EU --> PG
+EO --> PG
+EC --> PG
+SW ..> MealsUI : caché offline
+@enduml
