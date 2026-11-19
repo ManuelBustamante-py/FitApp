@@ -10,7 +10,7 @@ const navItems = [
   { label: "Hoy", icon: House },
   { label: "Comidas", icon: Utensils },
   { label: "Ejercicio", icon: Activity },
-  { label: "Peso", icon: Scale },
+  { label: "Peso", icon: Scale, href: "/peso" },
 ] as const;
 
 export default function Home() {
@@ -58,14 +58,28 @@ export default function Home() {
         className="bg-background sticky bottom-0 border-t pb-[env(safe-area-inset-bottom)]"
       >
         <ul className="grid grid-cols-4">
-          {navItems.map(({ label, icon: Icon }) => (
-            <li key={label}>
-              <span className="text-muted-foreground flex flex-col items-center gap-1 py-2 text-xs">
+          {navItems.map((item) => {
+            const { label, icon: Icon } = item;
+            const className =
+              "text-muted-foreground flex flex-col items-center gap-1 py-2 text-xs";
+            const content = (
+              <>
                 <Icon className="size-5" aria-hidden />
                 {label}
-              </span>
-            </li>
-          ))}
+              </>
+            );
+            return (
+              <li key={label}>
+                {"href" in item ? (
+                  <Link href={item.href} className={`${className} hover:text-foreground`}>
+                    {content}
+                  </Link>
+                ) : (
+                  <span className={className}>{content}</span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </div>
