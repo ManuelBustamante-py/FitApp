@@ -1,7 +1,9 @@
-import { Activity, House, Scale, Utensils } from "lucide-react";
+import { Activity, House, Scale, User, Utensils } from "lucide-react";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { UserMenu } from "@/components/auth/user-menu";
+import { ProfileGate } from "@/components/profile/profile-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const navItems = [
@@ -19,10 +21,22 @@ export default function Home() {
           <p className="text-muted-foreground text-sm">Balance de hoy</p>
           <h1 className="text-2xl font-semibold tracking-tight">FitApp</h1>
         </div>
-        <Suspense>
-          <UserMenu />
-        </Suspense>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/perfil"
+            aria-label="Perfil y meta"
+            className="hover:bg-muted flex size-8 items-center justify-center rounded-lg"
+          >
+            <User className="size-4" aria-hidden />
+          </Link>
+          <Suspense>
+            <UserMenu />
+          </Suspense>
+        </div>
       </header>
+      <Suspense>
+        <ProfileGate />
+      </Suspense>
 
       <main className="flex flex-1 flex-col gap-4 p-4">
         <Card>
