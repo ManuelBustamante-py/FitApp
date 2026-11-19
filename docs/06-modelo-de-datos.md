@@ -24,7 +24,7 @@ Diagrama entidad-relación: [uml/modelo-er.puml](uml/modelo-er.puml) · Modelo d
 | Tabla | Campos principales |
 |---|---|
 | `food` | `id`, `name_es`, `name_en?`, `brand?`, `barcode?`, `category`, `state` (crudo, cocido, n/a), `basis` (`per_100g` / `per_100ml`), `density_g_ml?`, `source`, `source_id`, `license`, `owner_user_id?` (null = público), `search_vector`, `imported_at` |
-| `nutrient` | `id`, `code` (energy_kcal, protein_g, carb_g, fat_g, fiber_g, sugar_g, sodium_mg…), `unit` |
+| `nutrient` | `id`, `code` (energy_kcal, protein_g, carb_g, fat_g, fiber_g, sugar_g, sodium_mg…), `name_es`, `unit`, `sort_order` |
 | `food_nutrient` | `food_id`, `nutrient_id`, `amount_per_100` |
 | `food_portion` | `id`, `food_id`, `label_es` ("1 taza", "1 unidad mediana"), `grams` |
 | `recipe` | `id`, `user_id`, `name`, `cooked_weight_g`, `food_id` (alimento generado con los valores por 100 g) |
@@ -43,3 +43,8 @@ Diagrama entidad-relación: [uml/modelo-er.puml](uml/modelo-er.puml) · Modelo d
 - **Alimentos del usuario y públicos en la misma tabla** (`owner_user_id`): una sola búsqueda; la RLS filtra `owner_user_id IS NULL OR owner_user_id = auth.uid()`.
 - **Fechas y horas con zona horaria** (`timestamptz`); el "día" se calcula con la zona horaria del perfil.
 - **Búsqueda:** índice GIN `pg_trgm` sobre `unaccent(name_es)` más `tsvector` español.
+- **Migraciones:** `supabase/migrations/` (la primera es el esquema inicial, con el seed de `nutrient` porque es dato de referencia en todos los entornos). Las pruebas de RLS están en `supabase/tests/` (pgTAP).
+- **Valores cerrados con `CHECK` sobre `text`** en vez de enums, para ampliarlos sin migraciones complejas. Códigos: `sex` (male, female), `level` (bmr_only, sedentary, light, moderate, active, very_active, custom), `kcal_method` (hr, met, machine, manual), `meal_type` (desayuno, almuerzo, once, cena, colacion), `state` (crudo, cocido, na), `unit` (g, ml, portion).
+- **RLS:** cada tabla de usuario filtra por `user_id = auth.uid()`; `meal_item` y `recipe_ingredient` heredan el permiso de su padre, y solo aceptan alimentos visibles para el usuario. `nutrient` y `activity_type` son de solo lectura; los alimentos públicos y los catálogos se escriben con la clave secreta (ETL), que omite la RLS. Las funciones de apoyo de la RLS viven en el esquema `private`, que la Data API no expone.
+- **Porción coherente:** `meal_item (portion_id, food_id)` referencia a `food_portion (id, food_id)`, así la porción siempre es del mismo alimento. Si la porción se borra, el ítem conserva sus gramos resueltos.
+- **Borrar la cuenta** (`auth.users`) elimina en cascada todos los datos del usuario, incluidos sus alimentos privados.
