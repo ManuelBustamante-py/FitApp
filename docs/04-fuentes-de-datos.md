@@ -48,7 +48,7 @@ descarga → staging (tablas crudas) → normalización (unidades, nutrientes po
 → validación (rangos) → deduplicación → upsert en food / food_nutrient / food_portion
 → indexación de búsqueda (pg_trgm + unaccent, tsvector es/en)
 ```
-- Scripts en `scripts/ingest/` (TypeScript o Python), idempotentes y con informe de filas insertadas y descartadas.
+- Scripts en `scripts/ingest/` (TypeScript), idempotentes y con informe de filas insertadas y descartadas. USDA: ver [scripts/ingest/README.md](../scripts/ingest/README.md) (descarga, diccionario de traducciones supervisado en CSV y carga).
 - Reimportación periódica: Open Food Facts mensual; USDA cuando haya una nueva versión (aprox. semestral).
 
 ## Reconocimiento por foto (fase 5)

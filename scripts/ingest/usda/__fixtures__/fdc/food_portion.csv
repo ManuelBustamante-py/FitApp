@@ -1,0 +1,5 @@
+"id","fdc_id","seq_num","amount","measure_unit_id","portion_description","modifier","gram_weight","data_points","footnote","min_year_acquired"
+"10","100","","1.0","1018","","","174","1","",""
+"11","100","","1.0","1011","","","120","1","",""
+"20","200","2","1","9999","","cup","158","","",""
+"21","200","1","0.5","9999","","cup","79","","",""

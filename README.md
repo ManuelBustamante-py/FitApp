@@ -54,6 +54,7 @@ En el panel del proyecto:
 | `npm run icons` | Regenera los íconos de la PWA desde `scripts/icons/icon.svg` |
 | `npm run db:types` | Regenera `lib/db/database.types.ts` desde Supabase |
 | `npm run db:test` | Pruebas de RLS con pgTAP sobre la base local (`supabase/tests/`) |
+| `npm run ingest:usda:translations` / `ingest:usda` | Borrador de traducciones y carga de alimentos USDA ([scripts/ingest/README.md](scripts/ingest/README.md)) |
 
 Componentes de UI: shadcn/ui (`npx shadcn@latest add <componente>`).
 
