@@ -49,6 +49,15 @@ export default function ProfilePage() {
       <Suspense>
         <ProfileContent />
       </Suspense>
+      <Link
+        href="/actividad"
+        className="hover:bg-muted rounded-lg border px-3 py-3 text-sm font-medium"
+      >
+        TMB y actividad cotidiana
+        <span className="text-muted-foreground block text-xs font-normal">
+          Fórmula de TMB, semana tipo y ajustes por fecha
+        </span>
+      </Link>
     </main>
   );
 }
