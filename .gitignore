@@ -11,3 +11,9 @@ coverage/
 Thumbs.db
 # datos crudos de ingesta (pesados)
 scripts/ingest/data/
+
+# next.js / typescript
+*.tsbuildinfo
+next-env.d.ts
+*.pem
+.pnp.*

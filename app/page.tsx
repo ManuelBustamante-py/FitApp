@@ -1,0 +1,52 @@
+import { Activity, House, Scale, Utensils } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const navItems = [
+  { label: "Hoy", icon: House },
+  { label: "Comidas", icon: Utensils },
+  { label: "Ejercicio", icon: Activity },
+  { label: "Peso", icon: Scale },
+] as const;
+
+export default function Home() {
+  return (
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
+      <header className="border-b px-4 pt-[max(env(safe-area-inset-top),1rem)] pb-3">
+        <p className="text-muted-foreground text-sm">Balance de hoy</p>
+        <h1 className="text-2xl font-semibold tracking-tight">FitApp</h1>
+      </header>
+
+      <main className="flex flex-1 flex-col gap-4 p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Déficit / superávit</CardTitle>
+          </CardHeader>
+          <CardContent className="text-muted-foreground text-sm">
+            Aquí verás lo que comiste, lo que gastaste y tu balance del día.
+          </CardContent>
+        </Card>
+        <p className="text-muted-foreground text-xs">
+          FitApp entrega estimaciones y no reemplaza la indicación de un profesional de la
+          salud.
+        </p>
+      </main>
+
+      <nav
+        aria-label="Navegación principal"
+        className="bg-background sticky bottom-0 border-t pb-[env(safe-area-inset-bottom)]"
+      >
+        <ul className="grid grid-cols-4">
+          {navItems.map(({ label, icon: Icon }) => (
+            <li key={label}>
+              <span className="text-muted-foreground flex flex-col items-center gap-1 py-2 text-xs">
+                <Icon className="size-5" aria-hidden />
+                {label}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  );
+}

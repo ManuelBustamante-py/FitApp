@@ -24,7 +24,7 @@ Diagramas: [uml/componentes.puml](uml/componentes.puml), [uml/despliegue.puml](u
 | Frontend | Next.js (App Router) + React + TypeScript | Un solo proyecto para la interfaz y el servidor; despliegue simple |
 | Estilos / UI | Tailwind CSS + shadcn/ui | Mobile-first y rápido de construir |
 | Gráficos | Recharts | Tendencias de peso, déficit y ejercicio |
-| PWA | Manifest + service worker (Serwist) | Instalable; offline en la fase 6 |
+| PWA | Manifest (`app/manifest.ts`) + service worker mínimo; Serwist en la fase 6 | Instalable desde F0; caché offline en la fase 6 |
 | Datos | Supabase Postgres | SQL, RLS por usuario, búsqueda de texto, plan gratuito |
 | Auth | Supabase Auth | Enlace mágico por email |
 | Validación | Zod | Mismos esquemas en el formulario y el servidor |

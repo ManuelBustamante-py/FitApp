@@ -18,6 +18,25 @@ Plataforma web instalable en el celular (PWA) para llevar el **balance calórico
 
 Next.js (App Router, TypeScript) · Supabase (Postgres, Auth, Storage) · Tailwind CSS · Vercel. Detalle en [docs/05-arquitectura.md](docs/05-arquitectura.md).
 
+## Desarrollo
+
+Requiere Node.js 22 o superior.
+
+```bash
+npm install
+npm run dev          # http://localhost:3000
+```
+
+| Script | Qué hace |
+|---|---|
+| `npm run build` / `npm start` | Build de producción y servidor (el service worker solo se registra en producción) |
+| `npm run lint` | ESLint (config de Next + Prettier) |
+| `npm run typecheck` | Genera los tipos de rutas y corre `tsc --noEmit` |
+| `npm run format` / `format:check` | Prettier (con orden de clases de Tailwind) |
+| `npm run icons` | Regenera los íconos de la PWA desde `scripts/icons/icon.svg` |
+
+Componentes de UI: shadcn/ui (`npx shadcn@latest add <componente>`).
+
 ## Documentación
 
 | # | Documento |
