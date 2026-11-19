@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildNutrientIndex,
   convertAmount,
+  estimateEnergyKcal,
   mapNutrients,
   normalizeNbr,
   NUTRIENT_MAPPINGS,
@@ -87,5 +88,34 @@ describe("mapNutrients", () => {
         "sugar_g",
       ].sort(),
     );
+  });
+});
+
+describe("estimateEnergyKcal (Atwater 4/4/9)", () => {
+  it("calcula con proteínas, carbohidratos y grasas", () => {
+    expect(estimateEnergyKcal({ protein_g: 10, carb_g: 20, fat_g: 5 })).toBe(165);
+  });
+
+  it("toma como 0 el macro ausente si hay al menos dos informados y no hay azúcares ni fibra", () => {
+    expect(estimateEnergyKcal({ protein_g: 10, fat_g: 5 })).toBe(85);
+    expect(estimateEnergyKcal({ protein_g: 10, carb_g: 20 })).toBe(120);
+  });
+
+  it("aceites y mantequilla: solo grasa informada (≥ 50 g)", () => {
+    expect(estimateEnergyKcal({ fat_g: 94.5, fat_saturated_g: 6.6 })).toBe(850.5);
+    expect(estimateEnergyKcal({ fat_g: 82.2, sugar_g: 0.58 })).toBe(742.12);
+    expect(estimateEnergyKcal({ fat_g: 10 })).toBeNull();
+  });
+
+  it("no calcula si faltan carbohidratos pero hay azúcares o fibra en cantidad", () => {
+    // Porotos secos de laboratorio: proteínas, grasa y fibra, sin carbohidratos.
+    expect(estimateEnergyKcal({ protein_g: 25.9, fat_g: 1.31, fiber_g: 4.3 })).toBeNull();
+    expect(estimateEnergyKcal({ protein_g: 1.5, sugar_g: 6.5, fiber_g: 5.3 })).toBeNull();
+  });
+
+  it("no calcula con un solo macro que no sea casi puro en grasa ni sin macros", () => {
+    expect(estimateEnergyKcal({ protein_g: 10 })).toBeNull();
+    expect(estimateEnergyKcal({ sodium_mg: 38700 })).toBeNull();
+    expect(estimateEnergyKcal({})).toBeNull();
   });
 });

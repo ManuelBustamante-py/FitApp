@@ -34,9 +34,10 @@ describe("detectState", () => {
 });
 
 describe("categoryEs", () => {
-  it("traduce las categorías de FDC y deja las demás como vienen", () => {
+  it("traduce las categorías de FDC y WWEIA y deja las desconocidas como vienen", () => {
     expect(categoryEs("Poultry Products")).toBe("Aves");
-    expect(categoryEs("Milk, whole")).toBe("Milk, whole");
+    expect(categoryEs("Milk, whole")).toBe("Leche entera");
+    expect(categoryEs("Categoría desconocida")).toBe("Categoría desconocida");
     expect(categoryEs("  ")).toBeNull();
     expect(categoryEs(null)).toBeNull();
   });
@@ -94,9 +95,40 @@ describe("normalizeFood", () => {
         basis: "per_100g",
         license: "CC0 / dominio público",
         nutrients: { energy_kcal: 118, protein_g: 22.5 },
+        kcalCalculada: false,
         portions: [{ sourcePortionId: "7", labelEs: "1 pechuga", grams: 174 }],
+        portionsSinTraducir: [],
       },
     });
+  });
+
+  it("calcula las kcal con Atwater cuando USDA no las informa y lo marca", () => {
+    const oil = normalizeFood(
+      food({
+        nutrients: [{ nutrientNbr: "298", unitName: "G", amount: 94.5 }],
+        portions: [],
+      }),
+      "Aceite de canola",
+    );
+    expect(oil).toMatchObject({
+      ok: true,
+      food: { kcalCalculada: true, nutrients: { energy_kcal: 850.5, fat_g: 94.5 } },
+    });
+    // Con kcal de USDA no se recalcula.
+    expect(normalizeFood(food(), "x")).toMatchObject({
+      ok: true,
+      food: { kcalCalculada: false },
+    });
+    // La validación sigue valiendo para lo calculado (> 902 kcal/100 g).
+    expect(
+      normalizeFood(
+        food({
+          nutrients: [{ nutrientNbr: "204", unitName: "G", amount: 101 }],
+          portions: [],
+        }),
+        "Grasa imposible",
+      ),
+    ).toMatchObject({ ok: false, kind: "error" });
   });
 
   it("omite los alimentos sin energía y marca error si los valores son imposibles", () => {

@@ -148,3 +148,33 @@ export function mapNutrients(
   }
   return result;
 }
+
+/**
+ * Energía por Atwater (4 kcal/g proteínas, 4 kcal/g carbohidratos, 9 kcal/g grasas)
+ * para los alimentos a los que USDA no informa kcal. Devuelve null si los macros no
+ * alcanzan para una estimación confiable (el alimento se omite como `sin_energia`).
+ *
+ * Un macro ausente se toma como 0 solo cuando es razonable:
+ * - carbohidratos ausentes: se usan azúcares + fibra si suman 2 g/100 g o menos
+ *   (trazas, p. ej. mantequilla con sal); si hay más, los carbohidratos existen y
+ *   subestimar las kcal sería peor que omitir el alimento (frutas, verduras y
+ *   porotos secos de laboratorio sin carbohidratos informados);
+ * - proteínas o grasas ausentes: se exigen al menos dos macros informados, o un
+ *   alimento casi puro en grasa (≥ 50 g/100 g: aceites, mantequilla).
+ */
+export function estimateEnergyKcal(nutrients: Record<string, number>): number | null {
+  const protein = nutrients.protein_g;
+  const fat = nutrients.fat_g;
+  let carb = nutrients.carb_g;
+  const carbTrace = (nutrients.sugar_g ?? 0) + (nutrients.fiber_g ?? 0);
+  if (carb === undefined) {
+    if (carbTrace > 2) return null;
+    // Sin carbohidratos informados: se considera la traza (0 si tampoco hay azúcares ni fibra).
+    carb = carbTrace;
+  }
+  const present = [protein, nutrients.carb_g, fat].filter((v) => v !== undefined).length;
+  const pureFat = fat !== undefined && fat >= 50 && present === 1;
+  if (present < 2 && !pureFat) return null;
+  const kcal = 4 * (protein ?? 0) + 4 * carb + 9 * (fat ?? 0);
+  return Math.round(kcal * 1000) / 1000;
+}

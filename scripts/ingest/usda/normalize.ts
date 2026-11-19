@@ -3,7 +3,8 @@
  * food_portion (lógica pura, sin E/S).
  */
 
-import { mapNutrients, type UsdaNutrientValue } from "./nutrients.ts";
+import { CATEGORIAS_WWEIA } from "./categorias.ts";
+import { estimateEnergyKcal, mapNutrients, type UsdaNutrientValue } from "./nutrients.ts";
 import {
   normalizePortions,
   type NormalizedPortion,
@@ -72,13 +73,14 @@ const CATEGORY_ES: Record<string, string> = {
 };
 
 /**
- * Categoría en español. Las categorías WWEIA de FNDDS (unas 170) se dejan en
- * inglés hasta tener su traducción revisada.
+ * Categoría en español: las de FDC (Foundation y SR Legacy) y las WWEIA de FNDDS
+ * (ver categorias.ts). Una categoría desconocida se conserva tal cual; los tests
+ * comprueban que no quede ninguna sin traducir en los datos.
  */
 export function categoryEs(categoryEn: string | null | undefined): string | null {
   const value = categoryEn?.trim();
   if (!value) return null;
-  return CATEGORY_ES[value] ?? value;
+  return CATEGORY_ES[value] ?? CATEGORIAS_WWEIA[value] ?? value;
 }
 
 /** Valida rangos plausibles por 100 g; devuelve el motivo si no pasa. */
@@ -127,7 +129,11 @@ export interface NormalizedFood {
   license: string;
   /** Código de nutriente FitApp → cantidad por 100 g. */
   nutrients: Record<string, number>;
+  /** true si las kcal no vienen de USDA sino de Atwater 4/4/9 (ver estimateEnergyKcal). */
+  kcalCalculada: boolean;
   portions: NormalizedPortion[];
+  /** Etiquetas de porción (en inglés) descartadas por no traducirse por completo. */
+  portionsSinTraducir: string[];
 }
 
 export type NormalizeResult =
@@ -156,10 +162,20 @@ export function normalizeFood(food: UsdaFood, nameEs: string): NormalizeResult {
     };
   }
   const nutrients = mapNutrients(food.nutrients);
+  // Si USDA no informa energía se calcula con Atwater 4/4/9 cuando los macros lo permiten.
+  let kcalCalculada = false;
+  if (nutrients.energy_kcal === undefined) {
+    const estimated = estimateEnergyKcal(nutrients);
+    if (estimated !== null) {
+      nutrients.energy_kcal = estimated;
+      kcalCalculada = true;
+    }
+  }
   // Sin energía el alimento no sirve para el balance: se omite (no es un error de datos).
   if (nutrients.energy_kcal === undefined) {
     return { ok: false, kind: "omitido", reason: "sin_energia" };
   }
+  const { portions, untranslated } = normalizePortions(food.portions);
   const invalid = validateNutrients(nutrients);
   if (invalid) return { ok: false, kind: "error", reason: invalid };
   return {
@@ -174,7 +190,9 @@ export function normalizeFood(food: UsdaFood, nameEs: string): NormalizeResult {
       basis: "per_100g",
       license: USDA_LICENSE,
       nutrients,
-      portions: normalizePortions(food.portions),
+      kcalCalculada,
+      portions,
+      portionsSinTraducir: untranslated,
     },
   };
 }

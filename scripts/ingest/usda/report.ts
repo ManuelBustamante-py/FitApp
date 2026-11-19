@@ -24,6 +24,12 @@ export interface IngestReport {
   porFuente: Record<string, Counts>;
   /** Importados según el estado de su traducción. */
   importadosPorEstado: Record<string, number>;
+  /** Importados cuyas kcal se calcularon con Atwater 4/4/9 porque USDA no las informa. */
+  kcalCalculada: number;
+  /** Porciones caseras importadas y descartadas por no traducirse por completo. */
+  porciones: { importadas: number; sinTraducir: number };
+  /** Etiquetas de porción descartadas (en inglés, sin repetir) con su cantidad. */
+  porcionesSinTraducir: Record<string, number>;
   omitidosPorMotivo: Record<string, number>;
   omitidos: ReportItem[];
   errores: ReportItem[];
@@ -41,6 +47,9 @@ export class ReportBuilder {
       totales: { importados: 0, omitidos: 0, errores: 0 },
       porFuente: {},
       importadosPorEstado: { revisado: 0, borrador: 0 },
+      kcalCalculada: 0,
+      porciones: { importadas: 0, sinTraducir: 0 },
+      porcionesSinTraducir: {},
       omitidosPorMotivo: {},
       omitidos: [],
       errores: [],
@@ -52,8 +61,19 @@ export class ReportBuilder {
     return this.report.porFuente[source];
   }
 
-  imported(source: string, status: string): void {
+  imported(
+    source: string,
+    status: string,
+    extra: { kcalCalculada?: boolean; portions?: number; untranslated?: string[] } = {},
+  ): void {
     this.report.totales.importados++;
+    if (extra.kcalCalculada) this.report.kcalCalculada++;
+    this.report.porciones.importadas += extra.portions ?? 0;
+    for (const label of extra.untranslated ?? []) {
+      this.report.porciones.sinTraducir++;
+      this.report.porcionesSinTraducir[label] =
+        (this.report.porcionesSinTraducir[label] ?? 0) + 1;
+    }
     this.counts(source).importados++;
     this.report.importadosPorEstado[status] =
       (this.report.importadosPorEstado[status] ?? 0) + 1;
@@ -106,6 +126,10 @@ export function formatReport(report: IngestReport, maxErrors = 10): string {
   const status = report.importadosPorEstado;
   lines.push(
     `Importados por traducción: ${status.revisado ?? 0} revisados, ${status.borrador ?? 0} borradores`,
+  );
+  lines.push(`kcal calculadas (Atwater 4/4/9) en importados: ${report.kcalCalculada}`);
+  lines.push(
+    `Porciones: ${report.porciones.importadas} importadas, ${report.porciones.sinTraducir} descartadas por no traducirse por completo (${Object.keys(report.porcionesSinTraducir).length} etiquetas distintas)`,
   );
   const reasons = Object.entries(report.omitidosPorMotivo).sort();
   if (reasons.length > 0) {

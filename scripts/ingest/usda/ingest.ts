@@ -97,7 +97,11 @@ async function main(): Promise<void> {
         continue;
       }
       toLoad.push({ food: result.food, status: decision.status });
-      report.imported(source, decision.status);
+      report.imported(source, decision.status, {
+        kcalCalculada: result.food.kcalCalculada,
+        portions: result.food.portions.length,
+        untranslated: result.food.portionsSinTraducir,
+      });
     }
   }
 

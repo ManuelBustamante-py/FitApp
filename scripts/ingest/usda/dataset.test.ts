@@ -53,7 +53,7 @@ describe("readDataset", () => {
         nutrients: { energy_kcal: 130.019, carb_g: 28.17 },
         // Ordenadas por seq_num.
         portions: [
-          { sourcePortionId: "21", labelEs: "0.5 taza", grams: 79 },
+          { sourcePortionId: "21", labelEs: "0,5 taza", grams: 79 },
           { sourcePortionId: "20", labelEs: "1 taza", grams: 158 },
         ],
       },
@@ -74,7 +74,9 @@ describe("readDataset", () => {
         sourceId: "300",
         nameEs: "Leche entera",
         nameEn: "Milk, whole",
-        category: "Milk, whole",
+        category: "Leche entera",
+        kcalCalculada: false,
+        portionsSinTraducir: [],
         state: "na",
         basis: "per_100g",
         license: "CC0 / dominio público",
