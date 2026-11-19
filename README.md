@@ -38,6 +38,12 @@ En el panel del proyecto:
    (`RedirectTo` ya trae `/auth/confirm?next=…`; por eso la URL debe estar en *Redirect URLs*). Así funciona aunque el correo se abra en otro navegador o en la app de correo. Sin este cambio también funciona (flujo PKCE), pero solo en el mismo navegador donde se pidió el enlace.
 3. Para regenerar los tipos (`npm run db:types`) hay que iniciar sesión una vez con `npx supabase login`.
 
+### Base de datos (migraciones)
+
+- Las migraciones viven en `supabase/migrations/`. Para crear una: `npx supabase migration new <nombre>`.
+- Para aplicarlas al proyecto remoto: `npx supabase link --project-ref etkdwacbyfwmascsnxnt` (una vez) y `npx supabase db push`. Después: `npm run db:types`.
+- Pruebas de RLS (pgTAP, requiere Docker): `npx supabase start` y `npm run db:test`.
+
 | Script | Qué hace |
 |---|---|
 | `npm run build` / `npm start` | Build de producción y servidor (el service worker solo se registra en producción) |
@@ -47,6 +53,7 @@ En el panel del proyecto:
 | `npm test` / `test:watch` | Pruebas unitarias con Vitest (`**/*.test.ts`) |
 | `npm run icons` | Regenera los íconos de la PWA desde `scripts/icons/icon.svg` |
 | `npm run db:types` | Regenera `lib/db/database.types.ts` desde Supabase |
+| `npm run db:test` | Pruebas de RLS con pgTAP sobre la base local (`supabase/tests/`) |
 
 Componentes de UI: shadcn/ui (`npx shadcn@latest add <componente>`).
 
