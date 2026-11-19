@@ -136,7 +136,9 @@ balance < 0 → déficit
 
 - Aproximación clásica: 1 kg de grasa ≈ 7.700 kcal → déficit de 500 kcal/día ≈ 0,45 kg/semana. Esta cifra **sobreestima** la pérdida a largo plazo porque el gasto se adapta, así que la proyección se muestra como un rango y se recalcula con el peso real.
 - Ritmo prudente sugerido: 0,5–1 % del peso corporal por semana. La aplicación avisa si la ingesta baja de ~1.500 kcal/día (hombres) o ~1.200 (mujeres) y recomienda consultar a un profesional.
-- Peso de tendencia: promedio móvil exponencial de los registros diarios (suaviza el agua y la sal).
+- **Rango de la proyección:** el extremo *lineal* mantiene el déficit del primer día (`Δpeso = balance × días / 7.700`); el extremo *adaptativo* recalcula el TDEE cada día con el peso proyectado, así que el déficit se achica a medida que la TMB baja. Ambos se muestran juntos.
+- Días a la meta (estimación lineal): `días = (peso_meta − peso_actual) × 7.700 / balance`; sin valor si el balance no va en la dirección de la meta.
+- Peso de tendencia: promedio móvil exponencial de los registros diarios (suaviza el agua y la sal), con α = 0,1 por día. Si faltan días, el registro siguiente pesa `1 − (1 − α)^días_transcurridos`.
 
 ## 8. TDEE adaptativo (fase posterior)
 
