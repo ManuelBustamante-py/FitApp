@@ -1,0 +1,5 @@
+"fdc_id","data_type","description","food_category_id","publication_date"
+"100","foundation_food","Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw","5","2019-04-01"
+"101","sample_food","Chicken breast sample","5","2019-04-01"
+"200","sr_legacy_food","Rice, white, long-grain, regular, cooked","20","2019-04-01"
+"201","sr_legacy_food","Spices, mystery blend","2","2019-04-01"

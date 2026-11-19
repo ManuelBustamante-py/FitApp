@@ -1,0 +1,4 @@
+"id","fdc_id","seq_num","amount","measure_unit_id","portion_description","modifier","gram_weight","data_points","footnote","min_year_acquired"
+"30","300","1","","9999","1 cup","10205","244.0","","",""
+"31","300","2","","9999","1 fl oz","20000","30.5","","",""
+"32","300","3","","9999","Quantity not specified","90000","0.0","","",""
