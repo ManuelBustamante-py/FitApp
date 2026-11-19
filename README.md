@@ -44,9 +44,21 @@ En el panel del proyecto:
 | `npm run lint` | ESLint (config de Next + Prettier) |
 | `npm run typecheck` | Genera los tipos de rutas y corre `tsc --noEmit` |
 | `npm run format` / `format:check` | Prettier (con orden de clases de Tailwind) |
+| `npm test` / `test:watch` | Pruebas unitarias con Vitest (`**/*.test.ts`) |
 | `npm run icons` | Regenera los íconos de la PWA desde `scripts/icons/icon.svg` |
+| `npm run db:types` | Regenera `lib/db/database.types.ts` desde Supabase |
 
 Componentes de UI: shadcn/ui (`npx shadcn@latest add <componente>`).
+
+## CI y despliegue
+
+- **GitHub Actions** ([.github/workflows/ci.yml](.github/workflows/ci.yml)): en cada PR y en cada push a `main` corre lint, typecheck, formato, pruebas y build con Node 24 (`.nvmrc`). El build usa variables de Supabase de relleno, porque solo valida su formato.
+- **Vercel** (integración de Git): cada PR genera un *preview* y `main` despliega a producción. Configuración del proyecto:
+  1. *Add New → Project* e importar el repositorio (preset Next.js, sin cambiar comandos).
+  2. *Settings → Environment Variables*: `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en Production y Preview.
+  3. *Settings → Build and Deployment → Node.js Version*: 24.x.
+  4. En Supabase, agregar la URL de producción como *Site URL* y en *Redirect URLs* `https://<app>.vercel.app/**` y, para los previews, `https://*-<cuenta>.vercel.app/**`.
+- Para que un PR no se pueda fusionar con CI en rojo: GitHub → *Settings → Branches* → regla para `main` que exija el check **Lint, tipos, pruebas y build**.
 
 ## Documentación
 
