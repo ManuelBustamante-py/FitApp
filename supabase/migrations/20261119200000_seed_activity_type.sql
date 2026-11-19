@@ -61,7 +61,7 @@ insert into public.activity_type (code, name_es, met, category) values
   -- Fuerza
   ('pesas_ligeras', 'Pesas, esfuerzo ligero o moderado (8–15 repeticiones)', 3.5, 'strength'), -- 02054
   ('pesas_intensas', 'Pesas, esfuerzo intenso', 6.0, 'strength'),                            -- 02050
-  ('circuito_moderado', 'Circuito de fuerza, moderado', 4.3, 'strength'),                    -- 02030
+  ('circuito_moderado', 'Circuito de fuerza, moderado', 4.3, 'strength'),                    -- 02035
 
   -- Flexibilidad
   ('estiramiento', 'Estiramiento suave', 2.3, 'flexibility'),                                -- 02101
