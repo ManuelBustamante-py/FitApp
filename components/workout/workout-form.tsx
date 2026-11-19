@@ -23,6 +23,7 @@ import {
   type WorkoutField,
   type WorkoutFieldErrors,
 } from "@/lib/workout/schema";
+import { defaultTemplateName, TEMPLATE_NAME_MAX } from "@/lib/workout/template";
 
 const INITIAL: WorkoutFormState = { status: "idle" };
 
@@ -102,6 +103,8 @@ export function WorkoutForm({
   const [clientErrors, setClientErrors] = useState<WorkoutFieldErrors | null>(null);
   const [estimate, setEstimate] = useState<ExerciseEstimate | null>(null);
   const [hrAvg, setHrAvg] = useState<number | null>(null);
+  const [saveTemplate, setSaveTemplate] = useState(false);
+  const [suggestedName, setSuggestedName] = useState("");
 
   const errors: WorkoutFieldErrors =
     clientErrors ?? (state.status === "error" ? (state.errors ?? {}) : {});
@@ -113,6 +116,13 @@ export function WorkoutForm({
     const parsed = parseWorkoutForm(data, today);
     const hr = Number(String(data.get("hrAvg") ?? "").replace(",", "."));
     setHrAvg(data.get("hrAvg") && Number.isFinite(hr) ? hr : null);
+    const chosen = activities.find((a) => a.id === Number(data.get("activityTypeId")));
+    const minutes = Number(String(data.get("durationMin") ?? "").replace(",", "."));
+    setSuggestedName(
+      chosen && Number.isFinite(minutes) && minutes > 0
+        ? defaultTemplateName(chosen.name_es, minutes)
+        : "",
+    );
     if (!parsed.success) {
       setEstimate(null);
       return;
@@ -141,6 +151,8 @@ export function WorkoutForm({
       setClientErrors(null);
       setEstimate(null);
       setHrAvg(null);
+      setSaveTemplate(false);
+      setSuggestedName("");
     }
   }
 
@@ -307,6 +319,35 @@ export function WorkoutForm({
         </div>
       </details>
 
+      <div className="flex flex-col gap-3 rounded-lg border px-3 py-2">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            name="saveTemplate"
+            checked={saveTemplate}
+            onChange={(event) => setSaveTemplate(event.target.checked)}
+            className="size-4"
+          />
+          Guardar como plantilla
+        </label>
+        {saveTemplate ? (
+          <Field
+            id="templateName"
+            label="Nombre de la plantilla"
+            hint={suggestedName ? `Si lo dejas vacío: ${suggestedName}` : undefined}
+          >
+            <Input
+              id="templateName"
+              name="templateName"
+              type="text"
+              maxLength={TEMPLATE_NAME_MAX}
+              autoComplete="off"
+              placeholder={suggestedName}
+            />
+          </Field>
+        ) : null}
+      </div>
+
       {estimate ? <Estimates estimate={estimate} /> : null}
 
       {state.status === "error" && state.message ? (
@@ -322,6 +363,12 @@ export function WorkoutForm({
             ? `; máquina: ${nf0.format(summary.machineKcal)}`
             : ""}
           ). Aporte al déficit: ≈ {nf0.format(summary.netKcal)} kcal.
+          {state.status === "saved" && state.templateSaved === true
+            ? " Plantilla guardada."
+            : ""}
+          {state.status === "saved" && state.templateSaved === false
+            ? " No se pudo guardar la plantilla."
+            : ""}
         </p>
       ) : null}
 
