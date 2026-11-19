@@ -24,8 +24,19 @@ Requiere Node.js 22 o superior.
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
+cp .env.example .env.local   # completar con la URL y la publishable key de Supabase
+npm run dev                  # http://localhost:3000
 ```
+
+### Supabase (Auth por enlace mágico)
+
+En el panel del proyecto:
+
+1. **Authentication → URL Configuration**: *Site URL* = la URL de producción; en *Redirect URLs* agregar `http://localhost:3000/**` y la URL de Vercel (`https://<app>.vercel.app/**`).
+2. *(Opcional; Supabase exige SMTP propio para editar plantillas)* **Authentication → Emails → Magic Link**: cambiar el enlace de la plantilla por
+   `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`
+   (`RedirectTo` ya trae `/auth/confirm?next=…`; por eso la URL debe estar en *Redirect URLs*). Así funciona aunque el correo se abra en otro navegador o en la app de correo. Sin este cambio también funciona (flujo PKCE), pero solo en el mismo navegador donde se pidió el enlace.
+3. Para regenerar los tipos (`npm run db:types`) hay que iniciar sesión una vez con `npx supabase login`.
 
 | Script | Qué hace |
 |---|---|

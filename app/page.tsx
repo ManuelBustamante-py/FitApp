@@ -1,5 +1,7 @@
 import { Activity, House, Scale, Utensils } from "lucide-react";
+import { Suspense } from "react";
 
+import { UserMenu } from "@/components/auth/user-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const navItems = [
@@ -12,9 +14,14 @@ const navItems = [
 export default function Home() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
-      <header className="border-b px-4 pt-[max(env(safe-area-inset-top),1rem)] pb-3">
-        <p className="text-muted-foreground text-sm">Balance de hoy</p>
-        <h1 className="text-2xl font-semibold tracking-tight">FitApp</h1>
+      <header className="flex items-end justify-between gap-2 border-b px-4 pt-[max(env(safe-area-inset-top),1rem)] pb-3">
+        <div>
+          <p className="text-muted-foreground text-sm">Balance de hoy</p>
+          <h1 className="text-2xl font-semibold tracking-tight">FitApp</h1>
+        </div>
+        <Suspense>
+          <UserMenu />
+        </Suspense>
       </header>
 
       <main className="flex flex-1 flex-col gap-4 p-4">
