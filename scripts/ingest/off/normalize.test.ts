@@ -53,6 +53,34 @@ describe("processProduct", () => {
     });
   });
 
+  describe("categoría y nombre en inglés", () => {
+    function food(overrides: Partial<OffRawProduct>) {
+      const result = processProduct(product(overrides), { countries: CHILE });
+      if (result.kind !== "ok") throw new Error("se esperaba ok");
+      return result.food;
+    }
+
+    it("sin datos: Sin categoría (nunca null) y name_en null", () => {
+      expect(food({})).toMatchObject({ category: "Sin categoría", nameEn: null });
+    });
+
+    it("name_en desde product_name_en y, si falta, generic_name_en", () => {
+      expect(
+        food({ productNameEn: " Vanilla  cookies ", genericNameEn: "Biscuit" }).nameEn,
+      ).toBe("Vanilla cookies");
+      expect(food({ genericNameEn: "Biscuit" }).nameEn).toBe("Biscuit");
+      expect(food({ productNameEn: "  ", genericNameEn: "" }).nameEn).toBeNull();
+    });
+
+    it("elige la etiqueta más específica con mapeo", () => {
+      const f = food({
+        categoriesTags: ["en:snacks", "en:biscuits", "en:chocolate-biscuits"],
+      });
+      expect(f.category).toBe("Galletas y brownies");
+      expect(f.etiquetasSinMapear).toEqual([]);
+    });
+  });
+
   describe("filtro de país", () => {
     it("ignora productos de otros países", () => {
       const raw = product({ countriesTags: ["en:france"] });

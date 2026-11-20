@@ -26,7 +26,7 @@ import {
   type OffFood,
 } from "./normalize.ts";
 import { readOffFile } from "./read.ts";
-import { formatReport, OffReportBuilder } from "./report.ts";
+import { formatReport, infoCategoria, OffReportBuilder } from "./report.ts";
 
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
@@ -100,7 +100,7 @@ async function main(): Promise<void> {
     }
     seen.add(result.food.barcode);
     toLoad.push(result.food);
-    report.imported(result.food.kcalDesdeKj);
+    report.imported(result.food.kcalDesdeKj, infoCategoria(result.food));
   }
 
   if (!dryRun && toLoad.length > 0) {
@@ -116,6 +116,7 @@ async function main(): Promise<void> {
       report.failedAfterImport(
         { code: e.barcode, name: e.name, reason: "error_de_carga", detail: e.error },
         byCode.get(e.barcode)?.kcalDesdeKj ?? false,
+        infoCategoria(byCode.get(e.barcode)),
       );
     }
   }

@@ -6,6 +6,9 @@ import { OFF_LICENSE, OFF_SOURCE, type OffFood } from "./normalize.ts";
 const FOOD: OffFood = {
   barcode: "7801234567890",
   nameEs: "Galletas de vainilla",
+  nameEn: "Vanilla cookies",
+  category: "Galletas y brownies",
+  etiquetasSinMapear: [],
   brand: "Marca A",
   basis: "per_100g",
   nutrients: { protein_g: 6, energy_kcal: 480, desconocido: 1 },
@@ -32,6 +35,8 @@ describe("carga de Open Food Facts", () => {
       owner_user_id: null,
       brand: "Marca A",
       basis: "per_100g",
+      name_en: "Vanilla cookies",
+      category: "Galletas y brownies",
     });
     expect(OFF_LICENSE).toContain("ODbL");
   });

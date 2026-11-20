@@ -186,11 +186,11 @@ Un producto se importa solo si pertenece a algún país elegido y cumple todo lo
 | `valor_no_numerico` | Un nutriente presente pero no numérico |
 | `linea_ilegible` | JSONL con una línea que no es JSON válido |
 
-Los productos de otros países solo se cuentan (`fueraDePais`). Los códigos de barras repetidos se deduplican conservando la primera aparición (`duplicados`, con su lista). El resumen en consola muestra leídos, fuera de país, importados, descartados, duplicados y descartados por motivo; el JSON trae además cada registro. Termina con código 1 si hubo errores al escribir.
+Los productos de otros países solo se cuentan (`fueraDePais`). Los códigos de barras repetidos se deduplican conservando la primera aparición (`duplicados`, con su lista). El informe incluye además la cobertura de categorías (`categorias`: con categoría, "Sin categoría", con nombre en inglés y las 20 etiquetas sin mapear más frecuentes en productos que quedaron sin categoría), también en el JSON de `--report`. El resumen en consola muestra leídos, fuera de país, importados, descartados, duplicados y descartados por motivo; el JSON trae además cada registro. Termina con código 1 si hubo errores al escribir.
 
 ### Qué se carga
 
-- `food`: `name_es` (producto), `brand` (primera marca), `barcode`, `basis` (`per_100ml` si `quantity` es un volumen: ml, cl, l; si no `per_100g`), `state = na`, `source = 'off'`, `source_id` = código de barras, `license = 'ODbL 1.0 (Open Food Facts)'`, `owner_user_id = null` (público). `name_en` y `category` quedan vacíos (OFF no trae categorías normalizadas al español).
+- `food`: `name_es` (producto), `brand` (primera marca), `barcode`, `basis` (`per_100ml` si `quantity` es un volumen: ml, cl, l; si no `per_100g`), `state = na`, `source = 'off'`, `source_id` = código de barras, `license = 'ODbL 1.0 (Open Food Facts)'`, `owner_user_id = null` (público). `name_en` sale de `product_name_en` (o `generic_name_en`; null si no hay). `category` usa las MISMAS categorías en español que USDA: se mapea `main_category` y `categories_tags` con la tabla revisable `off/categorias.ts` (etiqueta OFF sin `en:` → categoría WWEIA de `usda/categorias.ts`), eligiendo la etiqueta más específica con mapeo; sin coincidencia queda "Sin categoría", nunca null. Las etiquetas genéricas (`beverages`, `snacks`…) no se mapean a propósito. Para ampliar la cobertura, agrega filas a esa tabla mirando el informe.
 - `food_nutrient`: energía (kcal), proteínas, carbohidratos, azúcares, fibra, grasas, saturadas, trans, colesterol (g → mg), sodio (g → mg; si falta, sal × 400 mg) y alcohol, por 100 g o 100 ml. No hay porciones.
 
 ### Idempotencia

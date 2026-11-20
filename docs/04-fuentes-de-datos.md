@@ -21,11 +21,11 @@
 **Notas:**
 - Traducción: USDA está en inglés. Se agrega `name_es` (traducción supervisada de los ~13 mil genéricos) y la búsqueda indexa ambos idiomas.
 - ODbL: si se redistribuye la base derivada de Open Food Facts (por ejemplo, una exportación pública), esa base debe compartirse con la misma licencia y se debe atribuir la fuente. El uso interno en la aplicación con atribución está permitido.
-- Calidad en Open Food Facts: hay que descartar productos sin kcal o con valores imposibles (kcal > 900/100 g, macros que suman más de 100 g).
+- Calidad en Open Food Facts: hay que descartar productos sin kcal o con valores imposibles (kcal > 900/100 g, macros que suman más de 105 g/100 g: tope de 100 g más 5 g de tolerancia por redondeo de etiqueta, el mismo criterio que USDA).
 
 ### Open Food Facts: importación y atribución
 
-- ETL en `scripts/ingest/off/` (`npm run ingest:off`): lee el export CSV/JSONL descargado a mano, en streaming; filtra por `countries_tags` (Chile por defecto, LatAm con `--latam`); valida kcal ≤ 900 y nutrientes entre 0 y 100 g por 100 g (kJ se convierten a kcal ÷ 4,184); guarda el código de barras (`food.barcode`, `source_id`); deduplica por código; y emite un informe con el motivo de cada producto descartado. Uso en [scripts/ingest/README.md](../scripts/ingest/README.md).
+- ETL en `scripts/ingest/off/` (`npm run ingest:off`): lee el export CSV/JSONL descargado a mano, en streaming; filtra por `countries_tags` (Chile por defecto, LatAm con `--latam`); valida kcal ≤ 900 y nutrientes entre 0 y 100 g por 100 g (kJ se convierten a kcal ÷ 4,184); guarda el código de barras (`food.barcode`, `source_id`); mapea `categories_tags`/`main_category` a las mismas categorías en español de USDA (tabla en `off/categorias.ts`, "Sin categoría" si no hay equivalente) y rellena `name_en` desde `product_name_en`/`generic_name_en`; deduplica por código; y emite un informe con el motivo de cada producto descartado. Uso en [scripts/ingest/README.md](../scripts/ingest/README.md).
 - **Atribución ODbL (obligatoria):** «Contiene información de Open Food Facts, disponible bajo la Open Database License (ODbL).» Se registra en `food.license` (`ODbL 1.0 (Open Food Facts)`) y en la tabla `data_source` (una fila por `food.source`, con nombre, licencia, texto de atribución y URL; la leen los usuarios autenticados). La app debe mostrar ese texto donde use datos de OFF.
 - Compartir igual: no se redistribuye la base derivada. Si algún día se publica una exportación, debe ir bajo ODbL.
 

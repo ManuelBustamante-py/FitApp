@@ -1,5 +1,5 @@
-{"code":"7806666666666","product_name":"Yogurt","product_name_es":"Yogur natural","brands":"Soprole, Otra","quantity":"125 g","countries_tags":["en:chile"],"nutriments":{"energy-kcal_100g":62,"proteins_100g":3.5,"fat_100g":3,"carbohydrates_100g":5,"sugars_100g":5,"sodium_100g":0.05}}
-{"code":"7807777777777","product_name":"Mexican snack","countries_tags":["en:mexico"],"nutriments":{"energy-kj_100g":1500,"proteins_100g":"7,5","fat_100g":10,"carbohydrates_100g":60}}
+{"code":"7806666666666","product_name":"Yogurt","product_name_es":"Yogur natural","brands":"Soprole, Otra","quantity":"125 g","countries_tags":["en:chile"],"nutriments":{"energy-kcal_100g":62,"proteins_100g":3.5,"fat_100g":3,"carbohydrates_100g":5,"sugars_100g":5,"sodium_100g":0.05},"product_name_en":"Natural yogurt","categories_tags":["en:dairies","en:fermented-foods","en:fermented-milk-products","en:yogurts","en:natural-yogurts"],"main_category":"en:yogurts"}
+{"code":"7807777777777","product_name":"Mexican snack","countries_tags":["en:mexico"],"nutriments":{"energy-kj_100g":1500,"proteins_100g":"7,5","fat_100g":10,"carbohydrates_100g":60},"generic_name_en":"Spicy corn snack","categories_tags":["en:snacks","en:salty-snacks","en:appetizers"]}
 {"code":"7808888888888","product_name":"Basura","countries_tags":["en:chile"],"nutriments":{"energy-kcal_100g":"mucho","proteins_100g":1}}
 {"code":"7809000000000","product_name":"Fuera","countries_tags":["en:spain"],"nutriments":{"energy-kcal_100g":100}}
 esto no es json

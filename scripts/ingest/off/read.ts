@@ -51,6 +51,13 @@ function asString(value: unknown): string {
   return typeof value === "string" ? value : value == null ? "" : String(value);
 }
 
+/** Lista de etiquetas de OFF: arreglo JSON o texto separado por comas. */
+function tagList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map((t) => asString(t).trim().toLowerCase()).filter(Boolean)
+    : splitTags(asString(value));
+}
+
 /** Producto desde una fila del CSV/TSV (columnas por nombre de encabezado). */
 export function productFromRecord(record: Record<string, string>): OffRawProduct {
   const nutriments: OffRawProduct["nutriments"] = {};
@@ -59,6 +66,10 @@ export function productFromRecord(record: Record<string, string>): OffRawProduct
     code: record["code"] ?? "",
     productName: record["product_name"] ?? "",
     productNameEs: record["product_name_es"] ?? "",
+    productNameEn: record["product_name_en"] ?? "",
+    genericNameEn: record["generic_name_en"] ?? "",
+    categoriesTags: splitTags(record["categories_tags"] ?? ""),
+    mainCategory: (record["main_category"] ?? "").trim().toLowerCase(),
     brands: record["brands"] ?? "",
     quantity: record["quantity"] ?? "",
     countriesTags: splitTags(record["countries_tags"] ?? ""),
@@ -79,6 +90,10 @@ export function productFromJson(obj: Record<string, unknown>): OffRawProduct {
     code: asString(obj["code"]),
     productName: asString(obj["product_name"]),
     productNameEs: asString(obj["product_name_es"]),
+    productNameEn: asString(obj["product_name_en"]),
+    genericNameEn: asString(obj["generic_name_en"]),
+    categoriesTags: tagList(obj["categories_tags"]),
+    mainCategory: asString(obj["main_category"]).trim().toLowerCase(),
     brands: asString(obj["brands"]),
     quantity: asString(obj["quantity"]),
     countriesTags: Array.isArray(tags)
