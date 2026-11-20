@@ -125,6 +125,30 @@ export type Database = {
         }
         Relationships: []
       }
+      data_source: {
+        Row: {
+          attribution: string
+          license: string
+          name: string
+          source: string
+          url: string | null
+        }
+        Insert: {
+          attribution: string
+          license: string
+          name: string
+          source: string
+          url?: string | null
+        }
+        Update: {
+          attribution?: string
+          license?: string
+          name?: string
+          source?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       favorite_food: {
         Row: {
           created_at: string

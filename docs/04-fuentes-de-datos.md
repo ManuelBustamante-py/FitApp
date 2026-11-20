@@ -23,6 +23,12 @@
 - ODbL: si se redistribuye la base derivada de Open Food Facts (por ejemplo, una exportación pública), esa base debe compartirse con la misma licencia y se debe atribuir la fuente. El uso interno en la aplicación con atribución está permitido.
 - Calidad en Open Food Facts: hay que descartar productos sin kcal o con valores imposibles (kcal > 900/100 g, macros que suman más de 100 g).
 
+### Open Food Facts: importación y atribución
+
+- ETL en `scripts/ingest/off/` (`npm run ingest:off`): lee el export CSV/JSONL descargado a mano, en streaming; filtra por `countries_tags` (Chile por defecto, LatAm con `--latam`); valida kcal ≤ 900 y nutrientes entre 0 y 100 g por 100 g (kJ se convierten a kcal ÷ 4,184); guarda el código de barras (`food.barcode`, `source_id`); deduplica por código; y emite un informe con el motivo de cada producto descartado. Uso en [scripts/ingest/README.md](../scripts/ingest/README.md).
+- **Atribución ODbL (obligatoria):** «Contiene información de Open Food Facts, disponible bajo la Open Database License (ODbL).» Se registra en `food.license` (`ODbL 1.0 (Open Food Facts)`) y en la tabla `data_source` (una fila por `food.source`, con nombre, licencia, texto de atribución y URL; la leen los usuarios autenticados). La app debe mostrar ese texto donde use datos de OFF.
+- Compartir igual: no se redistribuye la base derivada. Si algún día se publica una exportación, debe ir bajo ODbL.
+
 ## API comerciales (complemento, evaluar en la fase 5)
 
 | API | Fortaleza | Consideraciones |
