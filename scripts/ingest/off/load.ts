@@ -33,10 +33,10 @@ export function buildFoodRow(food: OffFood, importedAt: string): FoodInsert {
   return {
     id: foodId(food.barcode),
     name_es: food.nameEs,
-    name_en: null,
+    name_en: food.nameEn,
     brand: food.brand,
     barcode: food.barcode,
-    category: null,
+    category: food.category,
     state: "na",
     basis: food.basis,
     density_g_ml: null,

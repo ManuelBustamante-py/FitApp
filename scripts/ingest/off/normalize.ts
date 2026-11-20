@@ -7,6 +7,8 @@
  * unidades de public.nutrient (kcal, g, mg).
  */
 
+import { resolverCategoria } from "./categorias.ts";
+
 /** Fuente en food.source y licencia en food.license (ver tabla data_source). */
 export const OFF_SOURCE = "off";
 export const OFF_LICENSE = "ODbL 1.0 (Open Food Facts)";
@@ -53,6 +55,12 @@ export interface OffRawProduct {
   code: string;
   productName: string;
   productNameEs: string;
+  /** product_name_en / generic_name_en: opcionales, para food.name_en. */
+  productNameEn?: string;
+  genericNameEn?: string;
+  /** categories_tags de OFF (de general a específico) y main_category, opcionales. */
+  categoriesTags?: string[];
+  mainCategory?: string;
   brands: string;
   quantity: string;
   countriesTags: string[];
@@ -63,6 +71,12 @@ export interface OffRawProduct {
 export interface OffFood {
   barcode: string;
   nameEs: string;
+  /** product_name_en o generic_name_en; null si OFF no lo trae. */
+  nameEn: string | null;
+  /** Categoría en español (la misma lista que USDA); "Sin categoría" si no hay mapeo. */
+  category: string;
+  /** Etiquetas de categoría del producto cuando quedó "Sin categoría" (para el informe). */
+  etiquetasSinMapear: string[];
   brand: string | null;
   basis: "per_100g" | "per_100ml";
   /** Código de public.nutrient → cantidad por 100 g/ml (kcal, g o mg). */
@@ -224,11 +238,21 @@ export function processProduct(
     );
   }
 
+  const nameEnRaw = (raw.productNameEn ?? "").trim() || (raw.genericNameEn ?? "").trim();
+  const nameEn = nameEnRaw.replace(/\s+/g, " ").slice(0, MAX_NAME_LENGTH);
+  const { category, sinMapear } = resolverCategoria(
+    raw.categoriesTags ?? [],
+    raw.mainCategory ?? "",
+  );
+
   return {
     kind: "ok",
     food: {
       barcode,
       nameEs: name.slice(0, MAX_NAME_LENGTH),
+      nameEn: nameEn === "" ? null : nameEn,
+      category,
+      etiquetasSinMapear: sinMapear,
       brand: firstBrand(raw.brands),
       basis: isLiquid(raw.quantity) ? "per_100ml" : "per_100g",
       nutrients,

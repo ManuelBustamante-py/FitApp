@@ -8,9 +8,14 @@ import { Readable } from "node:stream";
 
 import { describe, expect, it } from "vitest";
 
-import { processProduct, CHILE_TAG, LATAM_COUNTRY_TAGS } from "./normalize.ts";
+import {
+  processProduct,
+  CHILE_TAG,
+  LATAM_COUNTRY_TAGS,
+  type OffFood,
+} from "./normalize.ts";
 import { detectFormat, readOffFile, type ReadItem } from "./read.ts";
-import { OffReportBuilder, formatReport } from "./report.ts";
+import { OffReportBuilder, formatReport, infoCategoria } from "./report.ts";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "__fixtures__");
 
@@ -26,6 +31,7 @@ async function run(path: string, countries: string[]) {
   const report = new OffReportBuilder({ dryRun: true, countries });
   const seen = new Set<string>();
   const loaded: string[] = [];
+  const foods: OffFood[] = [];
   for (const item of await collect(path)) {
     report.read();
     if (!item.ok) {
@@ -47,10 +53,11 @@ async function run(path: string, countries: string[]) {
     } else {
       seen.add(result.food.barcode);
       loaded.push(result.food.barcode);
-      report.imported(result.food.kcalDesdeKj);
+      report.imported(result.food.kcalDesdeKj, infoCategoria(result.food));
+      foods.push(result.food);
     }
   }
-  return { report: report.build(), loaded };
+  return { report: report.build(), loaded, foods };
 }
 
 describe("detectFormat", () => {
@@ -106,6 +113,28 @@ describe("export TSV de Open Food Facts", () => {
     expect(report.duplicados[0].code).toBe("7801234567890");
   });
 
+  it("asigna categoría en español y name_en, y mide la cobertura", async () => {
+    const { report, foods } = await run(path, [CHILE_TAG]);
+    expect(foods.map((f) => [f.barcode, f.category, f.nameEn])).toEqual([
+      ["7801234567890", "Galletas y brownies", "Vanilla cookies"],
+      ["7809999999991", "Barras de cereal", "Cereal bar"],
+      ["7801111111111", "Sin categoría", null],
+    ]);
+    expect(report.categorias).toEqual({
+      conCategoria: 2,
+      sinCategoria: 1,
+      conNombreEn: 2,
+      etiquetasSinMapear: [
+        { etiqueta: "bebida-misteriosa", productos: 1 },
+        { etiqueta: "beverages", productos: 1 },
+        { etiqueta: "non-alcoholic-beverages", productos: 1 },
+      ],
+    });
+    const text = formatReport(report);
+    expect(text).toContain('"Sin categoría" 1');
+    expect(text).toContain("beverages 1");
+  });
+
   it("formatReport resume conteos y motivos", async () => {
     const { report } = await run(path, [CHILE_TAG]);
     const text = formatReport(report);
@@ -145,6 +174,14 @@ describe("export JSONL de Open Food Facts", () => {
     const { report, loaded } = await run(path, [...LATAM_COUNTRY_TAGS]);
     expect(loaded).toEqual(["7806666666666", "7807777777777"]);
     expect(report.kcalDesdeKj).toBe(1);
+  });
+
+  it("usa main_category, categories_tags y name_en / generic_name_en", async () => {
+    const { foods } = await run(path, [...LATAM_COUNTRY_TAGS]);
+    expect(foods.map((f) => [f.category, f.nameEn])).toEqual([
+      ["Yogur regular", "Natural yogurt"],
+      ["Pretzels y mezclas de snacks", "Spicy corn snack"],
+    ]);
   });
 });
 
