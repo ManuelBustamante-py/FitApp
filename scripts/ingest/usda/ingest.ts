@@ -5,7 +5,7 @@
  *
  * Opciones:
  *   --translations <csv>  diccionario de nombres (por defecto scripts/ingest/usda/translations.csv)
- *   --only-reviewed       carga solo las traducciones con status "revisado"
+ *   --only-reviewed       carga solo las traducciones con status "revisado" (confirmadas por una persona)
  *   --dry-run             lee, traduce y valida sin escribir en la base
  *   --report <json>       guarda el informe completo (omitidos y errores) en un JSON
  *   --batch-size <n>      alimentos por lote de escritura (por defecto 500)
