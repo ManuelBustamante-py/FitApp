@@ -131,3 +131,80 @@ Si un lote falla, se reintenta alimento por alimento para aislar el error y segu
 ### Pruebas
 
 La lógica pura (CSV, mapeo de nutrientes, unidades, glosario, porciones, fusión del CSV) tiene pruebas con Vitest y archivos de ejemplo pequeños en `usda/__fixtures__/` (`npm test`).
+
+## Open Food Facts (Chile / LatAm)
+
+Importa productos envasados con código de barras. Los datos son de Open Food Facts (OFF) y están bajo la **Open Database License (ODbL)**; ver [Atribución ODbL](#atribución-odbl).
+
+### 1. Descargar el export (a mano)
+
+No se descarga desde el script. Bajar a mano el export de productos desde <https://world.openfoodfacts.org/data> y dejarlo en `scripts/ingest/data/off/` (carpeta ignorada por git). Sirve cualquiera de estos, con o sin `.gz` (se descomprime al vuelo):
+
+| Formato | Archivo | Tamaño aprox. |
+|---|---|---|
+| CSV (separado por tabuladores) | `en.openfoodfacts.org.products.csv.gz` | varios GB descomprimido |
+| JSONL | `openfoodfacts-products.jsonl.gz` | varios GB descomprimido |
+
+El archivo se procesa en streaming, línea a línea: no se carga entero en memoria. Del CSV se leen las columnas `code`, `product_name`, `product_name_es` (si existe), `brands`, `quantity`, `countries_tags` y las `*_100g` de nutrientes; del JSONL, los mismos campos con `nutriments` anidado.
+
+### 2. Simular y cargar
+
+Variables de entorno: las mismas que USDA (`NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_SECRET_KEY` en `.env.local`). Antes de cargar hay que aplicar la migración `data_source` (atribución por fuente).
+
+```bash
+# Simulación: filtra, valida y deduplica sin escribir en la base (solo Chile)
+npm run ingest:off -- scripts/ingest/data/off/en.openfoodfacts.org.products.csv.gz --dry-run --report informe-off.json
+
+# Carga real, Chile
+npm run ingest:off -- scripts/ingest/data/off/en.openfoodfacts.org.products.csv.gz --report informe-off.json
+
+# Chile + resto de LatAm, o una lista propia de países
+npm run ingest:off -- <archivo> --latam
+npm run ingest:off -- <archivo> --countries en:chile,en:peru
+```
+
+| Opción | Efecto |
+|---|---|
+| `--countries <tags>` | Etiquetas `countries_tags` de OFF separadas por coma. Por defecto `en:chile` |
+| `--latam` | Suma los países de `LATAM_COUNTRY_TAGS` (`off/normalize.ts`) a la lista |
+| `--dry-run` | No escribe en la base |
+| `--report <archivo.json>` | Informe completo: un registro por cada producto descartado, con motivo y detalle |
+| `--batch-size <n>` | Productos por lote de escritura (500 por defecto) |
+
+### Reglas de validación
+
+Un producto se importa solo si pertenece a algún país elegido y cumple todo lo siguiente (si no, se descarta y queda en el informe con su motivo):
+
+| Motivo | Regla |
+|---|---|
+| `sin_codigo_barras` | `code` debe ser 6 a 14 dígitos (igual que el CHECK de `food.barcode`) |
+| `sin_nombre` | Se usa `product_name_es`; si está vacío, `product_name` |
+| `sin_energia` | Debe haber `energy-kcal_100g` o kJ (`energy-kj_100g` / `energy_100g`); los kJ se convierten con kcal = kJ ÷ 4,184 |
+| `kcal_fuera_de_rango` | kcal entre 0 y 900 por 100 g |
+| `nutriente_fuera_de_rango` | Proteínas, grasas, grasas saturadas y trans, carbohidratos, azúcares, fibra, alcohol, sodio, colesterol y sal: entre 0 y 100 g por 100 g |
+| `macros_suman_mas_de_100` | Proteínas + grasas + carbohidratos ≤ 105 g (tolerancia de 5 g por redondeo de etiqueta) |
+| `valor_no_numerico` | Un nutriente presente pero no numérico |
+| `linea_ilegible` | JSONL con una línea que no es JSON válido |
+
+Los productos de otros países solo se cuentan (`fueraDePais`). Los códigos de barras repetidos se deduplican conservando la primera aparición (`duplicados`, con su lista). El resumen en consola muestra leídos, fuera de país, importados, descartados, duplicados y descartados por motivo; el JSON trae además cada registro. Termina con código 1 si hubo errores al escribir.
+
+### Qué se carga
+
+- `food`: `name_es` (producto), `brand` (primera marca), `barcode`, `basis` (`per_100ml` si `quantity` es un volumen: ml, cl, l; si no `per_100g`), `state = na`, `source = 'off'`, `source_id` = código de barras, `license = 'ODbL 1.0 (Open Food Facts)'`, `owner_user_id = null` (público). `name_en` y `category` quedan vacíos (OFF no trae categorías normalizadas al español).
+- `food_nutrient`: energía (kcal), proteínas, carbohidratos, azúcares, fibra, grasas, saturadas, trans, colesterol (g → mg), sodio (g → mg; si falta, sal × 400 mg) y alcohol, por 100 g o 100 ml. No hay porciones.
+
+### Idempotencia
+
+El id de `food` es un UUID v5 determinista del código de barras, así que reimportar actualiza la misma fila (upsert por id); `food_nutrient` se reemplaza por producto. OFF se reimporta mensualmente. Los alimentos de OFF quedan por debajo de los de USDA y la tabla chilena en la prioridad de duplicados (ver docs/04).
+
+### Atribución ODbL
+
+Los datos de OFF requieren atribución y, si se redistribuye una base derivada, compartirla bajo la misma licencia. En FitApp queda registrada en:
+
+- `food.license` de cada producto (`ODbL 1.0 (Open Food Facts)`) y `food.source = 'off'`.
+- La tabla `public.data_source` (migración `20261120120000_data_source.sql`), con el texto: «Contiene información de Open Food Facts, disponible bajo la Open Database License (ODbL).» También registra las fuentes USDA. La app debe mostrar ese texto donde use productos de OFF (la app aún no tiene una pantalla de créditos).
+- Esta documentación y [docs/04-fuentes-de-datos.md](../../docs/04-fuentes-de-datos.md).
+
+### Pruebas
+
+`off/*.test.ts` cubre el filtro de país, la validación, kJ → kcal, la deduplicación y el informe con fixtures pequeños en `off/__fixtures__/` (`npm test`).
