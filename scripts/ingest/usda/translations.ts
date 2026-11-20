@@ -5,7 +5,9 @@
  * - source, source_id: identifican el alimento (usda_fdc / usda_fndds + fdc_id).
  * - name_en: nombre original de USDA.
  * - name_es: nombre en español que se carga. Vacío = sin traducción (no se carga).
- * - status: `borrador` (propuesto o editado, sin revisar) o `revisado`.
+ * - status: `borrador` (propuesto o editado, sin revisar), `revisado_ia` (revisado
+ *   nombre por nombre por un modelo de IA con GUIA-TRADUCCION.md) o `revisado`
+ *   (confirmado por una persona).
  * - auto_es: última propuesta del glosario. Las palabras sin traducir van entre
  *   corchetes. Sirve para saber si name_es fue editado a mano: si name_es es
  *   distinto de auto_es, es una edición manual y el generador no lo toca.
@@ -24,7 +26,14 @@ export const TRANSLATION_COLUMNS = [
   "auto_es",
 ] as const;
 
-export type TranslationStatus = "borrador" | "revisado";
+export const TRANSLATION_STATUSES = ["borrador", "revisado_ia", "revisado"] as const;
+
+export type TranslationStatus = (typeof TRANSLATION_STATUSES)[number];
+
+/** Estados que el generador no pisa: la fila ya fue revisada (por IA o por una persona). */
+export function isReviewed(status: TranslationStatus): boolean {
+  return status !== "borrador";
+}
 
 export interface TranslationRow {
   source: string;
@@ -55,9 +64,9 @@ export function parseTranslations(text: string): TranslationRow[] {
     const get = (name: (typeof TRANSLATION_COLUMNS)[number]) =>
       (row[col(name)] ?? "").trim();
     const status = get("status") || "borrador";
-    if (status !== "borrador" && status !== "revisado") {
+    if (!(TRANSLATION_STATUSES as readonly string[]).includes(status)) {
       throw new Error(
-        `Línea ${line}: status "${status}" inválido (usa "borrador" o "revisado")`,
+        `Línea ${line}: status "${status}" inválido (usa ${TRANSLATION_STATUSES.map((s) => `"${s}"`).join(", ")})`,
       );
     }
     const source = get("source");
@@ -67,15 +76,15 @@ export function parseTranslations(text: string): TranslationRow[] {
     if (seen.has(key)) throw new Error(`Línea ${line}: fila repetida ${key}`);
     seen.add(key);
     const nameEs = get("name_es");
-    if (status === "revisado" && !nameEs) {
-      throw new Error(`Línea ${line}: una fila "revisado" debe tener name_es`);
+    if (status !== "borrador" && !nameEs) {
+      throw new Error(`Línea ${line}: una fila "${status}" debe tener name_es`);
     }
     return {
       source,
       sourceId,
       nameEn: get("name_en"),
       nameEs,
-      status,
+      status: status as TranslationStatus,
       autoEs: get("auto_es"),
     };
   });
@@ -110,7 +119,7 @@ export interface MergeStats {
   added: number;
   /** Borradores automáticos actualizados con la nueva propuesta. */
   updated: number;
-  /** Filas revisadas o editadas a mano que se conservaron. */
+  /** Filas revisadas (por IA o por una persona) o editadas a mano que se conservaron. */
   preserved: number;
   /** Filas revisadas cuyo name_en cambió en USDA (conviene revisarlas de nuevo). */
   reviewedNameChanged: number;
@@ -124,7 +133,7 @@ export interface MergeStats {
  * Fusiona las propuestas del glosario con el CSV existente sin pisar el trabajo
  * manual:
  * - fila nueva → borrador; name_es solo si la traducción automática es completa.
- * - `revisado` → no se modifica.
+ * - `revisado` o `revisado_ia` → no se modifica.
  * - `borrador` con name_es editado a mano (≠ auto_es) → se conserva name_es y
  *   solo se actualizan name_en y auto_es.
  * - `borrador` automático o vacío → se reemplaza por la nueva propuesta.
@@ -166,7 +175,7 @@ export function mergeTranslations(
       continue;
     }
 
-    if (current.status === "revisado") {
+    if (isReviewed(current.status)) {
       stats.preserved++;
       if (current.nameEn !== candidate.nameEn) stats.reviewedNameChanged++;
       continue;
@@ -198,7 +207,10 @@ export type TranslationDecision =
   | { ok: true; nameEs: string; status: TranslationStatus }
   | { ok: false; reason: "sin_traduccion" | "no_revisado" };
 
-/** Decide qué nombre en español usa el ETL para un alimento. */
+/**
+ * Decide qué nombre en español usa el ETL para un alimento. Con `onlyReviewed`
+ * solo se cargan las filas confirmadas por una persona (`revisado`).
+ */
 export function resolveTranslation(
   row: TranslationRow | undefined,
   onlyReviewed: boolean,

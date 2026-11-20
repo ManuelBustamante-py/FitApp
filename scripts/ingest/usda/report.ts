@@ -46,7 +46,7 @@ export class ReportBuilder {
       carpetas: options.dirs,
       totales: { importados: 0, omitidos: 0, errores: 0 },
       porFuente: {},
-      importadosPorEstado: { revisado: 0, borrador: 0 },
+      importadosPorEstado: { revisado: 0, revisado_ia: 0, borrador: 0 },
       kcalCalculada: 0,
       porciones: { importadas: 0, sinTraducir: 0 },
       porcionesSinTraducir: {},
@@ -125,7 +125,7 @@ export function formatReport(report: IngestReport, maxErrors = 10): string {
   }
   const status = report.importadosPorEstado;
   lines.push(
-    `Importados por traducción: ${status.revisado ?? 0} revisados, ${status.borrador ?? 0} borradores`,
+    `Importados por traducción: ${status.revisado ?? 0} revisados, ${status.revisado_ia ?? 0} revisados por IA, ${status.borrador ?? 0} borradores`,
   );
   lines.push(`kcal calculadas (Atwater 4/4/9) en importados: ${report.kcalCalculada}`);
   lines.push(

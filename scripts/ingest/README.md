@@ -37,7 +37,7 @@ Los nombres en español salen de `scripts/ingest/usda/translations.csv`, version
 | `source`, `source_id` | `usda_fdc` (Foundation y SR Legacy) o `usda_fndds`, y el `fdc_id` |
 | `name_en` | Nombre original de USDA |
 | `name_es` | Nombre que se carga. **Vacío = no se carga** |
-| `status` | `borrador` (propuesto o editado, sin revisar) o `revisado` |
+| `status` | `borrador` (propuesto o editado, sin revisar), `revisado_ia` (revisado nombre por nombre por IA con la guía de estilo) o `revisado` (confirmado por una persona) |
 | `auto_es` | Última propuesta automática; las palabras sin glosario van entre `[corchetes]` |
 
 Generar o actualizar el borrador (sin API externas; usa el glosario de `usda/glossary.ts` y `usda/glossary-extra.ts`, reordena los nombres de USDA separados por comas y concuerda género y número, p. ej. *Chicken, broiler, breast, meat only, raw* → *Pollo, pechuga, solo carne, crudo* y *Potatoes, raw* → *Papas, crudas*):
@@ -49,7 +49,7 @@ npm run ingest:usda:translations -- scripts/ingest/data/usda
 El comando **fusiona** con el CSV existente, nunca lo pisa:
 
 - Filas nuevas → `borrador`. `name_es` se llena solo si todas las palabras están en el glosario; si no, queda vacío y la propuesta parcial queda en `auto_es`.
-- Filas `revisado` → no se tocan (si USDA cambió el `name_en`, el comando lo avisa).
+- Filas `revisado` o `revisado_ia` → no se tocan (si USDA cambió el `name_en`, el comando lo avisa).
 - Borradores con `name_es` editado a mano (distinto de `auto_es`) → se conserva `name_es`.
 - Borradores automáticos → se actualizan con la nueva propuesta (útil al ampliar el glosario).
 - Filas que ya no vienen en los datos → se conservan.
@@ -67,10 +67,12 @@ Al final muestra las palabras sin glosario más frecuentes: agregarlas a `glossa
 
 El test `translations.test.ts` comprueba que el CSV versionado no tenga nombres vacíos ni palabras entre corchetes y que los borradores automáticos coincidan con lo que genera el glosario actual: si agregas palabras al glosario, vuelve a correr el comando y haz commit del CSV.
 
+**Guía de estilo:** todos los nombres siguen [`usda/GUIA-TRADUCCION.md`](usda/GUIA-TRADUCCION.md) (español de Chile, orden natural «alimento, detalles», cortes de carne chilenos, marcas, unidades métricas, términos como *aderezo*/*aliño* y *postre tipo pudín*). Las 13 661 filas actuales se revisaron una por una con esa guía (`status = revisado_ia`); el glosario automático queda para las filas nuevas que traiga una versión futura de USDA.
+
 **Flujo de revisión:**
 
-1. Abrir `translations.csv` (planilla o editor), filtrar por `status = borrador`.
-2. Corregir `name_es` (o completarlo a partir de `auto_es`) y cambiar `status` a `revisado`.
+1. Abrir `translations.csv` (planilla o editor), filtrar por `status = borrador` (pendientes) o `revisado_ia` (para confirmar).
+2. Corregir `name_es` siguiendo la guía y cambiar `status` a `revisado`.
 3. Hacer commit del CSV en un PR: el diff muestra exactamente qué nombres se revisaron.
 
 ### 3. Cargar en Supabase
@@ -94,16 +96,16 @@ Opciones:
 
 | Opción | Efecto |
 |---|---|
-| `--only-reviewed` | Carga solo las filas `revisado` (por defecto se cargan también los `borrador` con `name_es`) |
+| `--only-reviewed` | Carga solo las filas `revisado` (confirmadas por una persona). Por defecto se cargan también `revisado_ia` y los `borrador` con `name_es` |
 | `--dry-run` | No escribe en la base |
 | `--report <archivo.json>` | Guarda el informe completo, con la lista de omitidos y errores |
 | `--translations <csv>` | Otro diccionario de traducciones |
 | `--batch-size <n>` | Alimentos por lote de escritura (500 por defecto) |
 
-El informe en consola muestra importados, omitidos y errores (totales y por fuente), cuántos importados tienen traducción `revisado` o `borrador`, cuántos tienen las kcal calculadas (`kcalCalculada` en el JSON), cuántas porciones se importaron y cuántas se descartaron por no traducirse por completo (con la lista de etiquetas, `porcionesSinTraducir`), y los omitidos por motivo:
+El informe en consola muestra importados, omitidos y errores (totales y por fuente), cuántos importados tienen traducción `revisado`, `revisado_ia` o `borrador`, cuántos tienen las kcal calculadas (`kcalCalculada` en el JSON), cuántas porciones se importaron y cuántas se descartaron por no traducirse por completo (con la lista de etiquetas, `porcionesSinTraducir`), y los omitidos por motivo:
 
 - `sin_traduccion`: la fila no tiene `name_es` (nunca se carga con el nombre en inglés).
-- `no_revisado`: con `--only-reviewed`, la fila es `borrador`.
+- `no_revisado`: con `--only-reviewed`, la fila es `borrador` o `revisado_ia`.
 - `sin_energia`: USDA no informa kcal para ese alimento y los macros no alcanzan para calcularlas (ver más abajo; algunos de Foundation, como porotos secos de laboratorio, frutas sin carbohidratos informados o la sal).
 - `duplicado`: el mismo `fdc_id` apareció en dos carpetas.
 

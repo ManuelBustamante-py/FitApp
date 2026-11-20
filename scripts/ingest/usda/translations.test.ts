@@ -37,6 +37,7 @@ describe("parseTranslations", () => {
   it.each([
     [HEADER + "usda_fdc,1,a,b,listo,c\n", /status "listo" inválido/],
     [HEADER + "usda_fdc,1,a,,revisado,c\n", /debe tener name_es/],
+    [HEADER + "usda_fdc,1,a,,revisado_ia,c\n", /"revisado_ia" debe tener name_es/],
     [HEADER + ",1,a,b,borrador,c\n", /falta source/],
     [HEADER + "usda_fdc,1,a,b,borrador,c\nusda_fdc,1,a,b,borrador,c\n", /repetida/],
     ["source,source_id\nusda_fdc,1\n", /sin columnas/],
@@ -93,6 +94,16 @@ describe("mergeTranslations", () => {
       [candidate("1", "Apples, raw, with skin")],
     );
     expect(rows).toEqual([reviewed]);
+    expect(stats).toMatchObject({ preserved: 1, reviewedNameChanged: 1 });
+  });
+
+  it("no toca las filas revisadas por IA", () => {
+    const reviewedAi = row({ nameEs: "Manzana cruda", status: "revisado_ia" });
+    const { rows, stats } = mergeTranslations(
+      [reviewedAi],
+      [candidate("1", "Apples, raw, with skin")],
+    );
+    expect(rows).toEqual([reviewedAi]);
     expect(stats).toMatchObject({ preserved: 1, reviewedNameChanged: 1 });
   });
 
@@ -171,6 +182,17 @@ describe("resolveTranslation", () => {
     expect(resolveTranslation(row({ status: "revisado" }), true)).toMatchObject({
       ok: true,
       status: "revisado",
+    });
+  });
+
+  it("carga revisado_ia por defecto, pero no con --only-reviewed (exige revisión humana)", () => {
+    expect(resolveTranslation(row({ status: "revisado_ia" }), false)).toMatchObject({
+      ok: true,
+      status: "revisado_ia",
+    });
+    expect(resolveTranslation(row({ status: "revisado_ia" }), true)).toEqual({
+      ok: false,
+      reason: "no_revisado",
     });
   });
 });

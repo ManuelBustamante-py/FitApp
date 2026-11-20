@@ -69,12 +69,13 @@ async function main(): Promise<void> {
 
   const withName = rows.filter((r) => r.nameEs !== "").length;
   const reviewed = rows.filter((r) => r.status === "revisado").length;
+  const reviewedAi = rows.filter((r) => r.status === "revisado_ia").length;
   console.log(`Diccionario actualizado: ${path}`);
   console.log(
-    `  ${rows.length} filas · ${withName} con name_es · ${reviewed} revisadas · ${rows.length - withName} sin traducción`,
+    `  ${rows.length} filas · ${withName} con name_es · ${reviewed} revisadas · ${reviewedAi} revisadas por IA · ${rows.length - withName} sin traducción`,
   );
   console.log(
-    `  nuevas ${stats.added} · borradores actualizados ${stats.updated} · conservadas (revisadas o editadas) ${stats.preserved} · sin cambios ${stats.unchanged} · no presentes en los datos ${stats.notInInput}`,
+    `  nuevas ${stats.added} · borradores actualizados ${stats.updated} · conservadas (revisadas, revisadas por IA o editadas) ${stats.preserved} · sin cambios ${stats.unchanged} · no presentes en los datos ${stats.notInInput}`,
   );
   if (stats.reviewedNameChanged > 0) {
     console.log(

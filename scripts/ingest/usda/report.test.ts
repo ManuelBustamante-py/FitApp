@@ -29,12 +29,16 @@ describe("ReportBuilder", () => {
       usda_fdc: { importados: 1, omitidos: 1, errores: 1 },
       usda_fndds: { importados: 1, omitidos: 0, errores: 1 },
     });
-    expect(report.importadosPorEstado).toEqual({ revisado: 1, borrador: 1 });
+    expect(report.importadosPorEstado).toEqual({
+      revisado: 1,
+      revisado_ia: 0,
+      borrador: 1,
+    });
     expect(report.omitidosPorMotivo).toEqual({ sin_traduccion: 1 });
 
     const text = formatReport(report, 1);
     expect(text).toContain("Importados: 2 · Omitidos: 1 · Errores: 2");
-    expect(text).toContain("1 revisados, 1 borradores");
+    expect(text).toContain("1 revisados, 0 revisados por IA, 1 borradores");
     expect(text).toContain("sin_traduccion 1");
     expect(text).toContain("… y 1 errores más");
   });
