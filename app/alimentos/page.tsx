@@ -1,4 +1,4 @@
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Plus, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -40,7 +40,14 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
     return (
       <p className="text-muted-foreground text-sm" role="status">
         No encontramos alimentos para «{q}». Prueba con otro nombre o revisa la
-        ortografía.
+        ortografía, o{" "}
+        <Link
+          href="/alimentos/nuevo"
+          className="text-foreground underline underline-offset-2"
+        >
+          crea el alimento
+        </Link>{" "}
+        desde su etiqueta.
       </p>
     );
   }
@@ -95,6 +102,12 @@ export default function AlimentosPage({ searchParams }: { searchParams: SearchPa
           <Search className="size-4" aria-hidden /> Buscar
         </button>
       </form>
+      <Link
+        href="/alimentos/nuevo"
+        className="text-primary inline-flex items-center gap-1 self-start text-sm font-medium"
+      >
+        <Plus className="size-4" aria-hidden /> Crear alimento
+      </Link>
       <Suspense>
         <Results searchParams={searchParams} />
       </Suspense>
