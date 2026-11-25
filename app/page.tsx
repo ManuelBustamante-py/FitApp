@@ -2,9 +2,9 @@ import { Activity, House, Scale, Search, User, Utensils } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { Dashboard } from "@/components/dashboard/dashboard";
 import { UserMenu } from "@/components/auth/user-menu";
 import { ProfileGate } from "@/components/profile/profile-gate";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const navItems = [
   { label: "Hoy", icon: House },
@@ -40,14 +40,9 @@ export default function Home() {
       </Suspense>
 
       <main className="flex flex-1 flex-col gap-4 p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Déficit / superávit</CardTitle>
-          </CardHeader>
-          <CardContent className="text-muted-foreground text-sm">
-            Aquí verás lo que comiste, lo que gastaste y tu balance del día.
-          </CardContent>
-        </Card>
+        <Suspense>
+          <Dashboard />
+        </Suspense>
         <p className="text-muted-foreground text-xs">
           FitApp entrega estimaciones y no reemplaza la indicación de un profesional de la
           salud.
