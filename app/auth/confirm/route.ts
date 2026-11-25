@@ -1,4 +1,7 @@
-import type { EmailOtpType } from "@supabase/supabase-js";
+import {
+  isAuthPKCECodeVerifierMissingError,
+  type EmailOtpType,
+} from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { safeNextPath } from "@/lib/auth/safe-next";
@@ -14,7 +17,8 @@ const OTP_TYPES: EmailOtpType[] = [
 ];
 
 /**
- * Destino del enlace mágico. Acepta los dos formatos de Supabase:
+ * Destino de enlaces de verificación por query string (los nuevos enlaces mágicos
+ * usan /auth/callback). Acepta los dos formatos de Supabase:
  * - `?token_hash=…&type=email` (plantilla de email personalizada; funciona aunque
  *   el enlace se abra en otro navegador o en la app de correo).
  * - `?code=…` (flujo PKCE de la plantilla por defecto; requiere el mismo navegador).
@@ -28,6 +32,7 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
   let ok = false;
+  let reason = "enlace";
 
   if (tokenHash && type && OTP_TYPES.includes(type)) {
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
@@ -35,6 +40,7 @@ export async function GET(request: NextRequest) {
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     ok = !error;
+    if (error && isAuthPKCECodeVerifierMissingError(error)) reason = "otro_navegador";
   }
 
   const target = request.nextUrl.clone();
@@ -45,7 +51,7 @@ export async function GET(request: NextRequest) {
     if (query) target.search = `?${query}`;
   } else {
     target.pathname = "/login";
-    target.searchParams.set("error", "enlace");
+    target.searchParams.set("error", reason);
   }
   return NextResponse.redirect(target);
 }
