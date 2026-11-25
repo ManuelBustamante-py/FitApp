@@ -103,6 +103,21 @@ export function productFromJson(obj: Record<string, unknown>): OffRawProduct {
   };
 }
 
+/**
+ * Aviso para un CSV/TSV cuyo encabezado no trae product_name_en ni product_name_es:
+ * el nombre en inglés (name_en) quedará vacío. null si el encabezado sí los trae.
+ */
+export function avisoEncabezadoCsv(header: readonly string[]): string | null {
+  if (header.includes("product_name_en") || header.includes("product_name_es")) {
+    return null;
+  }
+  return (
+    "Aviso: el CSV no trae product_name_es ni product_name_en, así que name_en quedará vacío " +
+    "(el nombre sale de product_name). Para nombres en inglés usa el export JSONL " +
+    "(openfoodfacts-products.jsonl.gz), recomendado."
+  );
+}
+
 /** Lee productos de un stream de texto ya descomprimido. */
 export async function* readOffLines(
   input: Readable,
@@ -118,6 +133,9 @@ export async function* readOffLines(
       const cells = line.split("\t");
       if (!header) {
         header = cells.map((c, i) => (i === 0 ? c.replace(/^﻿/, "") : c));
+        // Una sola vez por archivo: se avisa al leer el encabezado.
+        const aviso = avisoEncabezadoCsv(header);
+        if (aviso) console.warn(aviso);
         continue;
       }
       const record: Record<string, string> = {};

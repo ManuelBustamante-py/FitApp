@@ -3,8 +3,9 @@
  * Chile que ya usa USDA (`usda/categorias.ts`), para que la búsqueda y los filtros
  * por categoría traten igual a los productos envasados y a los alimentos USDA.
  *
- * - La clave es la etiqueta de `categories_tags` sin el prefijo `en:` (en
- *   minúsculas). El valor es la CLAVE en inglés de `CATEGORIAS_WWEIA`; así el
+ * - La clave es la etiqueta de `categories_tags` sin el prefijo de idioma
+ *   (`en:`, `es:`…), en minúsculas, sin tildes y con espacios convertidos en
+ *   guiones (`normalizarEtiqueta`). El valor es la CLAVE en inglés de `CATEGORIAS_WWEIA`; así el
  *   texto en español sale siempre de una sola fuente y no se puede desviar
  *   (`categorias.test.ts` falla si una clave no existe en USDA).
  * - `categories_tags` va de lo general a lo específico: se elige la etiqueta más
@@ -13,6 +14,9 @@
  * - Etiquetas genéricas de OFF (`beverages`, `snacks`, `plant-based-foods`,
  *   `dairies`…) se dejan sin mapear a propósito: agruparían mal. Salen en el
  *   informe de cobertura si el producto no tiene otra etiqueta con mapeo.
+ * - Etiquetas en español (`es:yogures`, `galletas`…): muchos productos chilenos
+ *   no están taxonomizados en inglés y solo traen la etiqueta en español. Van al
+ *   final, en un bloque aparte, y apuntan a la misma clave WWEIA que su par en inglés.
  * - No se inventan categorías nuevas: todas son valores de `CATEGORIAS_WWEIA`.
  *   Las equivalencias aproximadas llevan "aprox.". Los cereales de desayuno
  *   se reparten por azúcar según el nombre de la etiqueta; el resto va a
@@ -26,7 +30,7 @@ export const SIN_CATEGORIA = "Sin categoría";
 const CEREAL_ALTO = "Ready-to-eat cereal, higher sugar (>21.2g/100g)";
 const CEREAL_BAJO = "Ready-to-eat cereal, lower sugar (=<21.2g/100g)";
 
-/** Etiqueta OFF (sin `en:`) → clave de CATEGORIAS_WWEIA. */
+/** Etiqueta OFF (sin prefijo de idioma) → clave de CATEGORIAS_WWEIA. */
 export const MAPEO_CATEGORIAS_OFF: Record<string, string> = {
   // Lácteos
   milks: "Milk, whole", // aprox.: no distingue el contenido graso
@@ -341,14 +345,38 @@ export const MAPEO_CATEGORIAS_OFF: Record<string, string> = {
   "baby-milks": "Formula, prepared from powder", // aprox.
   "infant-formulas": "Formula, prepared from powder",
   "baby-biscuits": "Baby food: snacks and sweets",
+
+  // Etiquetas en español (sin taxonomizar en OFF, p. ej. `es:yogures`).
+  // Mismas claves WWEIA que su par en inglés; "dulces untables" es aprox.
+  galletas: "Cookies and brownies", // = biscuits
+  yogures: "Yogurt, regular", // = yogurts
+  leches: "Milk, whole", // = milks; aprox.: no distingue el contenido graso
+  quesos: "Cheese", // = cheeses
+  pan: "Yeast breads", // = breads
+  "leches-saborizadas": "Flavored milk, whole", // = flavoured-milks; aprox.
+  "jugos-de-fruta": "Other fruit juice", // = fruit-juices
+  "dulces-untables": "Jams, syrups, toppings", // aprox.: untables dulces
+  helados: "Ice cream and frozen dairy desserts", // = ice-creams
+  pescados: "Fish", // = fishes
+  "barras-de-proteina": "Nutrition bars", // = protein-bars
+  "barras-de-proteinas": "Nutrition bars", // = protein-bars
+  "cereales-para-desayuno": CEREAL_ALTO, // = breakfast-cereals; aprox.
 };
 
-/** Quita el prefijo de idioma (`en:`) y normaliza a minúsculas. */
+/**
+ * Quita el prefijo de idioma (`en:`, `es:`…), pasa a minúsculas, quita tildes y
+ * convierte espacios en guiones: "Leches saborizadas" y "leches-saborizadas" dan
+ * la misma clave.
+ */
 export function normalizarEtiqueta(tag: string): string {
   return tag
     .trim()
     .toLowerCase()
-    .replace(/^[a-z]{2}:/, "");
+    .replace(/^[a-z]{2}:/, "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .trim()
+    .replace(/\s+/g, "-");
 }
 
 /** Categoría en español de una etiqueta OFF, o null si no tiene mapeo. */
