@@ -5,13 +5,80 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { ResultadoAlimento } from "@/components/food/resultado-alimento";
+import { QuickAddRow } from "@/components/meal/quick-add-row";
 import { getCurrentUser } from "@/lib/db/server";
 import { cleanQuery, isSearchable, MAX_QUERY_LENGTH } from "@/lib/food/search";
 import { searchFoods } from "@/lib/food/search-queries";
+import { defaultMealType, hourIn } from "@/lib/meal/meal-types";
+import { listFavoriteIds, listQuickFoods } from "@/lib/meal/shortcuts-queries";
+import { getProfileBundle } from "@/lib/profile/queries";
+import { todayIn } from "@/lib/weight/entries";
 
 export const metadata: Metadata = { title: "Alimentos" };
 
 type SearchParams = Promise<{ q?: string | string[] }>;
+
+/** Favoritos y recientes para agregar de un toque (RF-22), antes de buscar. */
+async function Shortcuts({ userId }: { userId: string }) {
+  const [bundle, { favorites, recents }] = await Promise.all([
+    getProfileBundle(userId),
+    listQuickFoods(userId),
+  ]);
+  const timezone = bundle?.profile.timezone ?? "UTC";
+  const today = todayIn(timezone);
+  const mealType = defaultMealType(hourIn(timezone));
+  const favoriteIds = new Set(favorites.map((f) => f.foodId));
+  const recentOnly = recents.filter((r) => !favoriteIds.has(r.foodId));
+
+  return (
+    <>
+      <p className="text-muted-foreground text-sm">
+        Escribe el nombre de un alimento, una marca o un código de barras para buscarlo.
+      </p>
+      {favorites.length > 0 ? (
+        <section aria-labelledby="favoritos" className="flex flex-col gap-2">
+          <h2 id="favoritos" className="text-base font-semibold">
+            Favoritos
+          </h2>
+          <ul className="divide-y rounded-lg border">
+            {favorites.map((food) => (
+              <QuickAddRow
+                key={food.foodId}
+                food={food}
+                today={today}
+                defaultMealType={mealType}
+              />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {recentOnly.length > 0 ? (
+        <section aria-labelledby="recientes" className="flex flex-col gap-2">
+          <h2 id="recientes" className="text-base font-semibold">
+            Recientes
+          </h2>
+          <ul className="divide-y rounded-lg border">
+            {recentOnly.map((food) => (
+              <QuickAddRow
+                key={food.foodId}
+                food={food}
+                today={today}
+                defaultMealType={mealType}
+              />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {favorites.length === 0 && recentOnly.length === 0 ? (
+        <p className="text-muted-foreground text-sm">
+          Aquí verás tus favoritos y los alimentos que registraste hace poco, para
+          agregarlos con un toque. Marca un alimento con la estrella para guardarlo como
+          favorito.
+        </p>
+      ) : null}
+    </>
+  );
+}
 
 async function Results({ searchParams }: { searchParams: SearchParams }) {
   const user = await getCurrentUser();
@@ -20,13 +87,7 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
   const { q: rawQ } = await searchParams;
   const q = cleanQuery(Array.isArray(rawQ) ? (rawQ[0] ?? "") : (rawQ ?? ""));
 
-  if (q === "") {
-    return (
-      <p className="text-muted-foreground text-sm">
-        Escribe el nombre de un alimento, una marca o un código de barras para buscarlo.
-      </p>
-    );
-  }
+  if (q === "") return <Shortcuts userId={user.id} />;
   if (!isSearchable(q)) {
     return (
       <p className="text-muted-foreground text-sm" role="status">
@@ -35,7 +96,10 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
     );
   }
 
-  const foods = await searchFoods(q);
+  const [foods, favoriteIds] = await Promise.all([
+    searchFoods(q),
+    listFavoriteIds(user.id),
+  ]);
   if (foods.length === 0) {
     return (
       <p className="text-muted-foreground text-sm" role="status">
@@ -62,7 +126,11 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
       </h2>
       <ul className="divide-y rounded-lg border">
         {foods.map((food) => (
-          <ResultadoAlimento key={food.id} food={food} />
+          <ResultadoAlimento
+            key={food.id}
+            food={food}
+            isFavorite={favoriteIds.has(food.id)}
+          />
         ))}
       </ul>
     </section>

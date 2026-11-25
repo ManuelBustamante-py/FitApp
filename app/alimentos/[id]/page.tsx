@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { FavoriteButton } from "@/components/food/favorite-button";
 import { FuenteAlimento } from "@/components/food/fuente-alimento";
 import { MealItemForm } from "@/components/meal/meal-item-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { getCurrentUser } from "@/lib/db/server";
 import { basisLabel } from "@/lib/food/search";
 import { defaultMealType, hourIn } from "@/lib/meal/meal-types";
 import { getFoodForLogging } from "@/lib/meal/queries";
+import { listFavoriteIds } from "@/lib/meal/shortcuts-queries";
 import { getProfileBundle } from "@/lib/profile/queries";
 import { todayIn } from "@/lib/weight/entries";
 
@@ -29,7 +31,10 @@ async function FoodContent({ params }: { params: Params }) {
   if (!bundle) redirect("/onboarding");
 
   const { id } = await params;
-  const food = await getFoodForLogging(id);
+  const [food, favoriteIds] = await Promise.all([
+    getFoodForLogging(id),
+    listFavoriteIds(user.id),
+  ]);
   if (!food) notFound();
 
   const { timezone } = bundle.profile;
@@ -40,7 +45,16 @@ async function FoodContent({ params }: { params: Params }) {
   return (
     <>
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight break-words">{food.name}</h1>
+        <div className="flex items-start justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight break-words">
+            {food.name}
+          </h1>
+          <FavoriteButton
+            foodId={food.id}
+            foodName={food.name}
+            isFavorite={favoriteIds.has(food.id)}
+          />
+        </div>
         {details && <p className="text-muted-foreground text-sm">{details}</p>}
         <FuenteAlimento source={food.source} />
       </div>
