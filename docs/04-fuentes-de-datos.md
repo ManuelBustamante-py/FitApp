@@ -16,7 +16,7 @@
 | **USDA FNDDS** | ~5 mil alimentos *tal como se comen* (sopas, postres, platos) con **porciones caseras en gramos** | CSV/JSON | Dominio público | Platos preparados y porciones (taza, cucharada) |
 | **USDA Branded Foods** | ~400 mil productos de EE. UU. | CSV/JSON | Dominio público | Opcional; poca relevancia en Chile |
 | **Open Food Facts** | Productos envasados con código de barras; miles de Chile y Latinoamérica | Volcado Parquet/CSV/JSONL + API | Base: **ODbL** (compartir igual); imágenes CC BY-SA | Productos chilenos y escaneo de códigos de barras |
-| **Tabla chilena de composición de alimentos** (INTA – U. de Chile) y **LATINFOODS / FAO-INFOODS** | Alimentos y preparaciones locales (porotos, pan marraqueta, cazuela…) | PDF/Excel según la edición | Verificar licencia y permiso de uso | Alimentos locales sin código de barras |
+| **Tabla chilena de composición de alimentos** (INTA – U. de Chile) y **LATINFOODS / FAO-INFOODS** | Alimentos y preparaciones locales (porotos, pan marraqueta, cazuela…) | PDF/CD según la edición | **Sin licencia de reutilización confirmada: no se importa** (ver sección siguiente) | Alimentos locales sin código de barras |
 
 **Notas:**
 - Traducción: USDA está en inglés. Se agrega `name_es` (traducción supervisada de los ~13 mil genéricos) y la búsqueda indexa ambos idiomas.
@@ -28,6 +28,32 @@
 - ETL en `scripts/ingest/off/` (`npm run ingest:off`): lee el export CSV/JSONL descargado a mano, en streaming; filtra por `countries_tags` (Chile por defecto, LatAm con `--latam`); valida kcal ≤ 900 y nutrientes entre 0 y 100 g por 100 g (kJ se convierten a kcal ÷ 4,184); guarda el código de barras (`food.barcode`, `source_id`); mapea `categories_tags`/`main_category` a las mismas categorías en español de USDA (tabla en `off/categorias.ts`, "Sin categoría" si no hay equivalente) y rellena `name_en` desde `product_name_en`/`generic_name_en`; deduplica por código; y emite un informe con el motivo de cada producto descartado. Uso en [scripts/ingest/README.md](../scripts/ingest/README.md).
 - **Atribución ODbL (obligatoria):** «Contiene información de Open Food Facts, disponible bajo la Open Database License (ODbL).» Se registra en `food.license` (`ODbL 1.0 (Open Food Facts)`) y en la tabla `data_source` (una fila por `food.source`, con nombre, licencia, texto de atribución y URL; la leen los usuarios autenticados). La app debe mostrar ese texto donde use datos de OFF.
 - Compartir igual: no se redistribuye la base derivada. Si algún día se publica una exportación, debe ir bajo ODbL.
+
+### Tabla chilena de composición de alimentos: licencia y decisión (#14)
+
+**Decisión: no se importa nada por ahora.** Ninguna fuente consultada (revisión de 2026-11-25) otorga una licencia que permita incorporar y redistribuir estos datos en la app.
+
+Fuentes consultadas:
+
+| Fuente | Qué dice |
+|---|---|
+| [MINSAL, Composición de Alimentos](https://www.minsal.cl/composicion-de-alimentos/) | Publica el «CD Tabla Chilena de Composición Química de Alimentos, Actualización 2010» (.rar) y material de talleres (proyecto FAO TCP/RLA/3107). No declara licencia ni condiciones de reutilización; solo el pie «© Gobierno de Chile». Sin licencia explícita, rige el derecho de autor por defecto (todos los derechos reservados). |
+| [Repositorio U. de Chile, Tabla de composición química de alimentos chilenos (Schmidt Hebbel et al., 1990)](https://repositorio.uchile.cl/handle/2250/121427) | Acceso abierto, pero bajo **CC BY-NC-ND 3.0 Chile**: no permite uso comercial ni obras derivadas. Es un PDF escaneado de 62 págs. (sin formato estructurado) y datos de 1990. Importarlo (transformar a filas de base de datos) sería una obra derivada. |
+| [INTA, noticia sobre la Tabla de Composición de Alimentos 2018](https://inta.uchile.cl/noticias/56) | Edición vigente (INTA, U. de Chile; impresa/PDF). La página no informa descarga ni licencia. |
+| [FAO/INFOODS, bases de datos](https://www.fao.org/infoods/infoods/tables-and-databases/international-databases/en/) y LATINFOODS (latinfoods.inta.cl) | Red de coordinación; no publican la tabla chilena con licencia abierta. |
+| datos.gob.cl | No se encontró un conjunto de datos de la tabla con licencia abierta. |
+
+Conclusión: la edición actual (2018) no tiene licencia abierta ni archivo estructurado descargable; la del MINSAL (2010) no declara licencia; la de 1990 es CC BY-NC-ND (prohíbe derivadas). Importar sería arriesgado, por lo que no se agregó ETL ni valor nuevo en `food.source`.
+
+Mientras tanto, los alimentos locales se cubren con USDA, Open Food Facts y los alimentos personalizados del usuario (#17).
+
+**Alternativa: pedir permiso por escrito al INTA** (instituto@inta.uchile.cl o el contacto vigente en inta.uchile.cl). Borrador:
+
+> Asunto: Solicitud de autorización de uso de la Tabla de Composición de Alimentos (INTA)
+>
+> Estimados: desarrollo FitApp, una aplicación gratuita de registro de alimentación para personas en Chile. Quisiera pedir autorización por escrito para incorporar los valores de la Tabla de Composición de Alimentos (edición 2018 o la vigente) en la base de la aplicación, con atribución explícita al INTA – Universidad de Chile y a la edición usada. Agradeceré indicar bajo qué licencia o condiciones puede usarse, si existe una versión en formato estructurado (Excel/CSV) y si se permite el uso en una aplicación pública. Saludos cordiales.
+
+Si llega el permiso: guardar la autorización en el repositorio (o su referencia), agregar `chile_inta` al CHECK de `food.source` con una migración nueva no destructiva, insertar la fila en `data_source` con la atribución exigida, crear `scripts/ingest/inta/` siguiendo el patrón de `usda` y `off` (dry-run, informe, validaciones ≤ 105 g/100 g, pruebas) y respetar la prioridad ya definida (tabla chilena sobre USDA).
 
 ## API comerciales (complemento, evaluar en la fase 5)
 
