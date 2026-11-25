@@ -29,6 +29,16 @@ const SOURCES: Record<string, FoodSourceInfo> = {
     attribution: "Datos de USDA FoodData Central (FNDDS, dominio público, CC0).",
     odbl: false,
   },
+  user: {
+    label: "Alimento personalizado",
+    attribution: "Creado por el usuario.",
+    odbl: false,
+  },
+  recipe: {
+    label: "Receta propia",
+    attribution: "Receta creada por el usuario.",
+    odbl: false,
+  },
 };
 
 /** Información de atribución de un `food.source`; null si la fuente no se conoce. */
