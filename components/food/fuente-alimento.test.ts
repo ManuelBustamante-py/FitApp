@@ -27,6 +27,11 @@ describe("FuenteAlimento", () => {
     expect(html).toContain('href="/fuentes"');
   });
 
+  it("los alimentos propios del usuario tienen etiqueta legible", () => {
+    expect(render("user")).toContain("Fuente: Alimento personalizado.");
+    expect(render("recipe")).toContain("Fuente: Receta propia.");
+  });
+
   it("con una fuente desconocida muestra el código y los créditos", () => {
     const html = render("otra");
     expect(html).toContain("Fuente: otra.");
