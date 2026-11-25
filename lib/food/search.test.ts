@@ -6,6 +6,7 @@ import {
   isBarcode,
   isSearchable,
   normalizeQuery,
+  countryRank,
   sourceRank,
 } from "./search";
 
@@ -43,5 +44,16 @@ describe("búsqueda de alimentos", () => {
   it("etiqueta la base nutricional", () => {
     expect(basisLabel("per_100ml")).toBe("100 ml");
     expect(basisLabel("per_100g")).toBe("100 g");
+  });
+});
+
+describe("countryRank", () => {
+  it("los del país del usuario y los sin país van antes que los de otros países", () => {
+    expect(countryRank(["CL"], "CL")).toBe(0);
+    expect(countryRank(["AR", "CL"], "CL")).toBe(0);
+    expect(countryRank(null, "CL")).toBe(0);
+    expect(countryRank([], "CL")).toBe(0);
+    expect(countryRank(["MX"], "CL")).toBe(1);
+    expect(countryRank(["MX"], "MX")).toBe(0);
   });
 });

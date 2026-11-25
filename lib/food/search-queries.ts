@@ -18,10 +18,15 @@ export type FoodSearchResult = {
   score: number;
 };
 
-/** Busca alimentos visibles para el usuario (RPC `search_food`, respeta la RLS). */
+/**
+ * Busca alimentos visibles para el usuario (RPC `search_food`, respeta la RLS). Con
+ * `country` (ISO alfa-2) los productos de otros países quedan al final de cada nivel de
+ * relevancia; sin él, la función usa el país del perfil o Chile.
+ */
 export async function searchFoods(
   raw: string,
   maxResults = DEFAULT_RESULTS,
+  country?: string,
 ): Promise<FoodSearchResult[]> {
   const q = cleanQuery(raw);
   if (!isSearchable(q)) return [];
@@ -29,6 +34,7 @@ export async function searchFoods(
   const { data, error } = await supabase.rpc("search_food", {
     q,
     max_results: maxResults,
+    ...(country ? { user_country: country } : {}),
   });
   if (error) throw new Error("No se pudo buscar alimentos.");
   return data;

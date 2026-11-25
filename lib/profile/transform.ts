@@ -24,6 +24,7 @@ export function toProfileRow(values: ProfileFormValues) {
     birth_date: values.birthDate,
     height_cm: values.heightCm,
     timezone: values.timezone,
+    country: values.country,
   };
 }
 
@@ -40,6 +41,10 @@ export interface StoredProfile {
   birth_date: string;
   height_cm: number;
   timezone: string;
+  /** País guardado; null = aún no elegido. */
+  country: string | null;
+  /** País propuesto (IP o zona horaria) para cuando no hay uno guardado. */
+  proposedCountry: string;
   level: string;
   goal: {
     target_weight_kg: number;
@@ -55,6 +60,7 @@ export function toFormDefaults({ goal, ...stored }: StoredProfile) {
     birthDate: stored.birth_date,
     heightCm: String(stored.height_cm),
     timezone: stored.timezone,
+    country: stored.country ?? stored.proposedCountry,
     activityLevel: stored.level,
     goalType: goal?.target_bmi != null ? "bmi" : "weight",
     targetWeightKg: goal ? String(goal.target_weight_kg) : "",

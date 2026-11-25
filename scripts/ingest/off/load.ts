@@ -44,6 +44,7 @@ export function buildFoodRow(food: OffFood, importedAt: string): FoodInsert {
     source_id: food.barcode,
     license: OFF_LICENSE,
     owner_user_id: null,
+    countries: food.countries,
     imported_at: importedAt,
   };
 }

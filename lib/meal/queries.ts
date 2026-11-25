@@ -14,6 +14,8 @@ export interface FoodDetail extends FoodForLogging {
   category: string | null;
   state: string;
   source: string;
+  /** Países del producto (ISO alfa-2); null = sin país (USDA, propios, recetas). */
+  countries: string[] | null;
   portions: { id: string; label: string; grams: number }[];
   /** Nutrientes informados con nombre y unidad, en el orden del catálogo. */
   nutrientList: { code: string; name: string; unit: string; per100: number }[];
@@ -29,7 +31,7 @@ export async function getFoodForLogging(id: string): Promise<FoodDetail | null> 
   const { data, error } = await supabase
     .from("food")
     .select(
-      "id, name_es, brand, category, state, basis, density_g_ml, source, food_nutrient (amount_per_100, nutrient (code, name_es, unit, sort_order)), food_portion (id, label_es, grams)",
+      "id, name_es, brand, category, state, basis, density_g_ml, source, countries, food_nutrient (amount_per_100, nutrient (code, name_es, unit, sort_order)), food_portion (id, label_es, grams)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -60,6 +62,7 @@ export async function getFoodForLogging(id: string): Promise<FoodDetail | null> 
     category: data.category,
     state: data.state,
     source: data.source,
+    countries: data.countries,
     basis: toBasis(data.basis),
     densityGMl: data.density_g_ml === null ? null : Number(data.density_g_ml),
     per100: Object.fromEntries(nutrientList.map((n) => [n.code, n.per100])),

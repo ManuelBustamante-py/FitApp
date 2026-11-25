@@ -14,6 +14,8 @@ import { defaultMealType, hourIn } from "@/lib/meal/meal-types";
 import { getFoodForLogging } from "@/lib/meal/queries";
 import { getRecipeIdByFood } from "@/lib/recipe/queries";
 import { listFavoriteIds } from "@/lib/meal/shortcuts-queries";
+import { countryList, isForeignProduct } from "@/lib/profile/country";
+import { userCountryFrom } from "@/lib/profile/country-queries";
 import { getProfileBundle } from "@/lib/profile/queries";
 import { todayIn } from "@/lib/weight/entries";
 
@@ -40,6 +42,10 @@ async function FoodContent({ params }: { params: Params }) {
   if (!food) notFound();
 
   const { timezone } = bundle.profile;
+  const foreign = isForeignProduct(
+    food.countries,
+    await userCountryFrom(bundle.profile.country),
+  );
   const details = [food.brand, food.category, STATE_LABELS[food.state]]
     .filter(Boolean)
     .join(" · ");
@@ -58,6 +64,11 @@ async function FoodContent({ params }: { params: Params }) {
           />
         </div>
         {details && <p className="text-muted-foreground text-sm">{details}</p>}
+        {foreign && food.countries ? (
+          <p className="text-muted-foreground text-xs">
+            Producto de {countryList(food.countries)}
+          </p>
+        ) : null}
         <FuenteAlimento source={food.source} />
         {recipeId ? (
           <Link

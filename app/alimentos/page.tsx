@@ -11,6 +11,7 @@ import { cleanQuery, isSearchable, MAX_QUERY_LENGTH } from "@/lib/food/search";
 import { searchFoods } from "@/lib/food/search-queries";
 import { defaultMealType, hourIn } from "@/lib/meal/meal-types";
 import { listFavoriteIds, listQuickFoods } from "@/lib/meal/shortcuts-queries";
+import { getUserCountry } from "@/lib/profile/country-queries";
 import { getProfileBundle } from "@/lib/profile/queries";
 import { todayIn } from "@/lib/weight/entries";
 
@@ -97,7 +98,7 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
   }
 
   const [foods, favoriteIds] = await Promise.all([
-    searchFoods(q),
+    getUserCountry(user.id).then((country) => searchFoods(q, undefined, country)),
     listFavoriteIds(user.id),
   ]);
   if (foods.length === 0) {

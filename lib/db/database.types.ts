@@ -181,6 +181,7 @@ export type Database = {
           basis: string
           brand: string | null
           category: string | null
+          countries: string[] | null
           density_g_ml: number | null
           id: string
           imported_at: string
@@ -198,6 +199,7 @@ export type Database = {
           basis?: string
           brand?: string | null
           category?: string | null
+          countries?: string[] | null
           density_g_ml?: number | null
           id?: string
           imported_at?: string
@@ -215,6 +217,7 @@ export type Database = {
           basis?: string
           brand?: string | null
           category?: string | null
+          countries?: string[] | null
           density_g_ml?: number | null
           id?: string
           imported_at?: string
@@ -450,6 +453,7 @@ export type Database = {
           birth_date: string
           bmr_formula: string
           bmr_measured_kcal: number | null
+          country: string | null
           created_at: string
           display_name: string | null
           height_cm: number
@@ -464,6 +468,7 @@ export type Database = {
           birth_date: string
           bmr_formula?: string
           bmr_measured_kcal?: number | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
           height_cm: number
@@ -478,6 +483,7 @@ export type Database = {
           birth_date?: string
           bmr_formula?: string
           bmr_measured_kcal?: number | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
           height_cm?: number
@@ -674,7 +680,7 @@ export type Database = {
     Functions: {
       f_unaccent: { Args: { value: string }; Returns: string }
       search_food: {
-        Args: { max_results?: number; q: string }
+        Args: { max_results?: number; q: string; user_country?: string }
         Returns: {
           barcode: string | null
           basis: string

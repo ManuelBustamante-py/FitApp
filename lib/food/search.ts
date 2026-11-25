@@ -47,6 +47,17 @@ export function sourceRank(source: string, isOwn: boolean): number {
   }
 }
 
+/**
+ * Prioridad por país (menor = primero), igual que la función SQL: 0 si el alimento es
+ * del país del usuario o no tiene país (USDA, propios, recetas); 1 si es de otro país.
+ */
+export function countryRank(
+  countries: readonly string[] | null | undefined,
+  userCountry: string,
+): 0 | 1 {
+  return !countries || countries.length === 0 || countries.includes(userCountry) ? 0 : 1;
+}
+
 /** Texto de la base nutricional del alimento. */
 export function basisLabel(basis: string): string {
   return basis === "per_100ml" ? "100 ml" : "100 g";

@@ -1,5 +1,7 @@
 /** Validación de códigos de barras GS1 (EAN-13, EAN-8, UPC-A y GTIN-14). Sin acceso a datos. */
 
+import { countryRank, sourceRank } from "./search";
+
 /** Largos con dígito verificador GS1 que admite el escaneo. */
 export const BARCODE_LENGTHS = [8, 12, 13, 14] as const;
 
@@ -36,4 +38,44 @@ export function barcodeCandidates(raw: string): string[] {
   if (code.length === 12) out.add(`0${code}`);
   if (code.length === 13 && code.startsWith("0")) out.add(code.slice(1));
   return [...out];
+}
+
+export interface BarcodeMatch {
+  id: string;
+  source: string;
+  owner_user_id: string | null;
+  countries: string[] | null;
+}
+
+/**
+ * Elige entre varios alimentos con el mismo código: primero el propio, luego el del
+ * país del usuario (o sin país), luego la prioridad de fuente. null si no hay ninguno.
+ */
+export function pickBarcodeMatch(
+  matches: readonly BarcodeMatch[],
+  userId: string,
+  userCountry: string,
+): BarcodeMatch | null {
+  const key = (m: BarcodeMatch) => {
+    const own = m.owner_user_id === userId;
+    return [
+      own ? 0 : 1,
+      countryRank(m.countries, userCountry),
+      sourceRank(m.source, own),
+    ];
+  };
+  let best: { match: BarcodeMatch; key: number[] } | null = null;
+  for (const match of matches) {
+    const k = key(match);
+    if (!best || isBefore(k, best.key)) best = { match, key: k };
+  }
+  return best?.match ?? null;
+}
+
+/** Orden lexicográfico estricto: true si a va antes que b (los empates conservan el orden). */
+function isBefore(a: readonly number[], b: readonly number[]): boolean {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return a[i] < b[i];
+  }
+  return false;
 }

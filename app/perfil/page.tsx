@@ -6,6 +6,8 @@ import { Suspense } from "react";
 
 import { ProfileForm } from "@/components/profile/profile-form";
 import { getCurrentUser } from "@/lib/db/server";
+import { proposeCountry } from "@/lib/profile/country";
+import { getIpCountry } from "@/lib/profile/country-queries";
 import { getProfileBundle } from "@/lib/profile/queries";
 import { listTimeZones } from "@/lib/profile/timezones";
 import { toFormDefaults } from "@/lib/profile/transform";
@@ -17,6 +19,10 @@ async function ProfileContent() {
   if (!user) redirect("/login");
   const bundle = await getProfileBundle(user.id);
   if (!bundle) redirect("/onboarding");
+  const { country, timezone } = bundle.profile;
+  const proposedCountry = country
+    ? country
+    : proposeCountry({ ipCountry: await getIpCountry(), timezone });
 
   return (
     <ProfileForm
@@ -26,7 +32,9 @@ async function ProfileContent() {
         sex: bundle.profile.sex,
         birth_date: bundle.profile.birth_date,
         height_cm: bundle.profile.height_cm,
-        timezone: bundle.profile.timezone,
+        timezone,
+        country,
+        proposedCountry,
         level: bundle.level,
         goal: bundle.goal,
       })}
