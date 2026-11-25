@@ -664,6 +664,22 @@ export type Database = {
     }
     Functions: {
       f_unaccent: { Args: { value: string }; Returns: string }
+      search_food: {
+        Args: { max_results?: number; q: string }
+        Returns: {
+          barcode: string | null
+          basis: string
+          brand: string | null
+          category: string | null
+          id: string
+          kcal_per_100: number | null
+          name_en: string | null
+          name_es: string
+          owner_user_id: string | null
+          score: number
+          source: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

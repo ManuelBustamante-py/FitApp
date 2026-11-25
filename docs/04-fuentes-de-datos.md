@@ -55,6 +55,13 @@ Mientras tanto, los alimentos locales se cubren con USDA, Open Food Facts y los 
 
 Si llega el permiso: guardar la autorización en el repositorio (o su referencia), agregar `chile_inta` al CHECK de `food.source` con una migración nueva no destructiva, insertar la fila en `data_source` con la atribución exigida, crear `scripts/ingest/inta/` siguiendo el patrón de `usda` y `off` (dry-run, informe, validaciones ≤ 105 g/100 g, pruebas) y respetar la prioridad ya definida (tabla chilena sobre USDA).
 
+## Búsqueda de alimentos (#15)
+
+- RPC `public.search_food(q, max_results = 30)`, `security invoker` (la RLS entrega públicos + propios). Normaliza con `lower(f_unaccent(q))`; menos de 2 caracteres devuelve vacío; 6 a 14 dígitos buscan por `barcode` exacto.
+- Candidatos: `ilike '%t1%t2%'` sobre `f_unaccent(name_es | name_en | brand)` o similitud de palabra `<%` (umbral por defecto 0,6) sobre `name_es`. Ambos usan los índices GIN trigram (`food_name_trgm_idx`, `food_name_en_trgm_idx`, `food_brand_trgm_idx`) para cumplir p95 < 300 ms (RNF-04). Tope de 100 resultados.
+- Deduplicación sin borrar datos: una fila por (nombre normalizado, marca; en OFF también código de barras), eligiendo la fuente de mayor prioridad (usuario > cl_inta > usda_fdc > usda_fndds > off > usda_branded). Resuelve los ~270 nombres repetidos entre SR Legacy y FNDDS.
+- Orden: relevancia (exacto, prefijo, contiene, difuso), luego prioridad de fuente, luego similitud. Cada resultado muestra kcal por 100 g o 100 ml (nutriente `energy_kcal`) y la atribución con `FuenteAlimento`.
+
 ## API comerciales (complemento, evaluar en la fase 5)
 
 | API | Fortaleza | Consideraciones |
