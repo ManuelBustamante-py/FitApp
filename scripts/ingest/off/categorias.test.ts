@@ -45,6 +45,55 @@ describe("mapeo de categorías de Open Food Facts", () => {
       expect(categoriaDeEtiqueta(tag)).toBe(categoria);
     }
   });
+
+  it("etiquetas en español: misma categoría que su par en inglés", () => {
+    const pares: [string, string][] = [
+      ["es:galletas", "en:biscuits"],
+      ["es:yogures", "en:yogurts"],
+      ["es:leches", "en:milks"],
+      ["es:quesos", "en:cheeses"],
+      ["es:pan", "en:breads"],
+      ["es:leches-saborizadas", "en:flavoured-milks"],
+      ["es:jugos-de-fruta", "en:fruit-juices"],
+    ];
+    for (const [es, en] of pares) {
+      expect(categoriaDeEtiqueta(es)).not.toBeNull();
+      expect(categoriaDeEtiqueta(es)).toBe(categoriaDeEtiqueta(en));
+    }
+    expect(categoriaDeEtiqueta("es:yogures")).toBe("Yogur regular");
+    expect(categoriaDeEtiqueta("es:galletas")).toBe("Galletas y brownies");
+  });
+
+  it("etiquetas en español con espacios, mayúsculas o tildes", () => {
+    expect(categoriaDeEtiqueta("es:leches saborizadas")).toBe(
+      categoriaDeEtiqueta("en:flavoured-milks"),
+    );
+    expect(categoriaDeEtiqueta("Jugos de Fruta")).toBe("Otros jugos de fruta");
+    expect(categoriaDeEtiqueta("es:Dulces Untables")).toBe(
+      "Mermeladas, jarabes y coberturas",
+    );
+    expect(categoriaDeEtiqueta("es:dulces únicos")).toBeNull();
+    expect(categoriaDeEtiqueta("es:quésos")).toBe("Queso");
+  });
+
+  it("las etiquetas genéricas en español no se mapean", () => {
+    const genericas = [
+      "es:bebidas",
+      "es:lácteos",
+      "es:lacteos",
+      "es:postres",
+      "es:snacks",
+      "es:carnes",
+      "es:cereales",
+      "es:alimentos",
+    ];
+    for (const tag of genericas) {
+      expect(categoriaDeEtiqueta(tag), tag).toBeNull();
+    }
+    expect(resolverCategoria(["es:bebidas", "es:galletas"]).category).toBe(
+      "Galletas y brownies",
+    );
+  });
 });
 
 describe("resolverCategoria", () => {

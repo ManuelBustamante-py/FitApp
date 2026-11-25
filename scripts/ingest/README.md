@@ -142,10 +142,12 @@ No se descarga desde el script. Bajar a mano el export de productos desde <https
 
 | Formato | Archivo | Tamaño aprox. |
 |---|---|---|
+| **JSONL (recomendado)** | `openfoodfacts-products.jsonl.gz` | ~14 GB comprimido |
 | CSV (separado por tabuladores) | `en.openfoodfacts.org.products.csv.gz` | varios GB descomprimido |
-| JSONL | `openfoodfacts-products.jsonl.gz` | varios GB descomprimido |
 
-El archivo se procesa en streaming, línea a línea: no se carga entero en memoria. Del CSV se leen las columnas `code`, `product_name`, `product_name_es` (si existe), `brands`, `quantity`, `countries_tags` y las `*_100g` de nutrientes; del JSONL, los mismos campos con `nutriments` anidado.
+**Usa el JSONL.** Es el formato recomendado porque trae `product_name_es`, `product_name_en` y `generic_name_en`, así que `name_en` (nombre en inglés del producto) sale con datos. El CSV no trae esas columnas (solo `product_name` y `generic_name`): con el CSV `name_en` queda **null** y el nombre sale de `product_name`. Si se usa el CSV, el ETL lo avisa en consola una sola vez.
+
+El archivo se procesa en streaming, línea a línea: no se carga entero en memoria. Del JSONL se leen `code`, `product_name`, `product_name_es`, `product_name_en`, `generic_name_en`, `brands`, `quantity`, `countries_tags`, `categories_tags`, `main_category` y `nutriments` (claves `energy-kcal_100g`, `proteins_100g`, `fat_100g`… por 100 g). El CSV trae las mismas columnas planas (`*_100g` como columnas).
 
 ### 2. Simular y cargar
 
@@ -153,14 +155,14 @@ Variables de entorno: las mismas que USDA (`NEXT_PUBLIC_SUPABASE_URL` y `SUPABAS
 
 ```bash
 # Simulación: filtra, valida y deduplica sin escribir en la base (solo Chile)
-npm run ingest:off -- scripts/ingest/data/off/en.openfoodfacts.org.products.csv.gz --dry-run --report informe-off.json
+npm run ingest:off -- scripts/ingest/data/off/openfoodfacts-products.jsonl.gz --dry-run --report informe-off.json
 
 # Carga real, Chile
-npm run ingest:off -- scripts/ingest/data/off/en.openfoodfacts.org.products.csv.gz --report informe-off.json
+npm run ingest:off -- scripts/ingest/data/off/openfoodfacts-products.jsonl.gz --report informe-off.json
 
 # Chile + resto de LatAm, o una lista propia de países
-npm run ingest:off -- <archivo> --latam
-npm run ingest:off -- <archivo> --countries en:chile,en:peru
+npm run ingest:off -- scripts/ingest/data/off/openfoodfacts-products.jsonl.gz --latam
+npm run ingest:off -- scripts/ingest/data/off/openfoodfacts-products.jsonl.gz --countries en:chile,en:peru
 ```
 
 | Opción | Efecto |
@@ -190,7 +192,7 @@ Los productos de otros países solo se cuentan (`fueraDePais`). Los códigos de 
 
 ### Qué se carga
 
-- `food`: `name_es` (producto), `brand` (primera marca), `barcode`, `basis` (`per_100ml` si `quantity` es un volumen: ml, cl, l; si no `per_100g`), `state = na`, `source = 'off'`, `source_id` = código de barras, `license = 'ODbL 1.0 (Open Food Facts)'`, `owner_user_id = null` (público). `name_en` sale de `product_name_en` (o `generic_name_en`; null si no hay). `category` usa las MISMAS categorías en español que USDA: se mapea `main_category` y `categories_tags` con la tabla revisable `off/categorias.ts` (etiqueta OFF sin `en:` → categoría WWEIA de `usda/categorias.ts`), eligiendo la etiqueta más específica con mapeo; sin coincidencia queda "Sin categoría", nunca null. Las etiquetas genéricas (`beverages`, `snacks`…) no se mapean a propósito. Para ampliar la cobertura, agrega filas a esa tabla mirando el informe.
+- `food`: `name_es` (producto), `brand` (primera marca), `barcode`, `basis` (`per_100ml` si `quantity` es un volumen: ml, cl, l; si no `per_100g`), `state = na`, `source = 'off'`, `source_id` = código de barras, `license = 'ODbL 1.0 (Open Food Facts)'`, `owner_user_id = null` (público). `name_en` sale de `product_name_en` (o `generic_name_en`; null si no hay; con el CSV siempre null, ver arriba). `category` usa las MISMAS categorías en español que USDA: se mapea `main_category` y `categories_tags` con la tabla revisable `off/categorias.ts` (etiqueta OFF sin prefijo de idioma → categoría WWEIA de `usda/categorias.ts`), eligiendo la etiqueta más específica con mapeo; sin coincidencia queda "Sin categoría", nunca null. Las etiquetas en español que trae OFF sin taxonomizar (`es:yogures`, `es:galletas`…) tienen su bloque propio en la tabla. Las etiquetas genéricas (`beverages`, `snacks`, `bebidas`…) no se mapean a propósito. Para ampliar la cobertura, agrega filas a esa tabla mirando el informe.
 - `food_nutrient`: energía (kcal), proteínas, carbohidratos, azúcares, fibra, grasas, saturadas, trans, colesterol (g → mg), sodio (g → mg; si falta, sal × 400 mg) y alcohol, por 100 g o 100 ml. No hay porciones.
 
 ### Idempotencia

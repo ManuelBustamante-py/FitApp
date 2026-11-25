@@ -14,7 +14,7 @@ import {
   LATAM_COUNTRY_TAGS,
   type OffFood,
 } from "./normalize.ts";
-import { detectFormat, readOffFile, type ReadItem } from "./read.ts";
+import { avisoEncabezadoCsv, detectFormat, readOffFile, type ReadItem } from "./read.ts";
 import { OffReportBuilder, formatReport, infoCategoria } from "./report.ts";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "__fixtures__");
@@ -66,6 +66,19 @@ describe("detectFormat", () => {
     expect(detectFormat("a.csv.gz")).toBe("tsv");
     expect(detectFormat("a.JSONL.GZ")).toBe("jsonl");
     expect(() => detectFormat("a.parquet")).toThrow(/Formato no reconocido/);
+  });
+});
+
+describe("aviso de nombres en inglés en el CSV", () => {
+  it("avisa si el encabezado no trae product_name_en ni product_name_es", () => {
+    const aviso = avisoEncabezadoCsv(["code", "product_name", "generic_name"]);
+    expect(aviso).toMatch(/name_en quedará vacío/);
+    expect(aviso).toMatch(/jsonl/i);
+  });
+
+  it("no avisa si trae product_name_es o product_name_en", () => {
+    expect(avisoEncabezadoCsv(["code", "product_name", "product_name_es"])).toBeNull();
+    expect(avisoEncabezadoCsv(["code", "product_name_en"])).toBeNull();
   });
 });
 
