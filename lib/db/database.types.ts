@@ -357,7 +357,9 @@ export type Database = {
           grams_resolved: number
           id: string
           kcal: number
+          kcal_estimated: boolean
           meal_entry_id: string
+          nutrients: Json
           portion_id: string | null
           protein_g: number
           quantity: number
@@ -371,7 +373,9 @@ export type Database = {
           grams_resolved: number
           id?: string
           kcal: number
+          kcal_estimated?: boolean
           meal_entry_id: string
+          nutrients?: Json
           portion_id?: string | null
           protein_g?: number
           quantity: number
@@ -385,7 +389,9 @@ export type Database = {
           grams_resolved?: number
           id?: string
           kcal?: number
+          kcal_estimated?: boolean
           meal_entry_id?: string
+          nutrients?: Json
           portion_id?: string | null
           protein_g?: number
           quantity?: number

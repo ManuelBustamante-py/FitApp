@@ -26,6 +26,10 @@ const render = (food: FoodSearchResult) =>
   );
 
 describe("ResultadoAlimento", () => {
+  it("enlaza al registro del alimento", () => {
+    expect(render(base)).toContain('href="/alimentos/1"');
+  });
+
   it("muestra nombre, marca, categoría, kcal, base y fuente", () => {
     const html = render(base);
     expect(html).toContain("Leche descremada");

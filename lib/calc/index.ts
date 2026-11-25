@@ -10,3 +10,4 @@ export * from "./daily";
 export * from "./exercise";
 export * from "./balance";
 export * from "./projection";
+export * from "./nutrition";

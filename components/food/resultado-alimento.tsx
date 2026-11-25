@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { basisLabel } from "@/lib/food/search";
 import type { FoodSearchResult } from "@/lib/food/search-queries";
 
@@ -5,13 +7,24 @@ import { FuenteAlimento } from "./fuente-alimento";
 
 const nfKcal = new Intl.NumberFormat("es", { maximumFractionDigits: 0 });
 
-/** Un resultado de la búsqueda: nombre, marca, categoría, kcal y atribución. */
+/**
+ * Un resultado de la búsqueda: nombre, marca, categoría, kcal y atribución. El nombre
+ * enlaza al registro del alimento en una comida (#16).
+ */
 export function ResultadoAlimento({ food }: { food: FoodSearchResult }) {
   const details = [food.brand, food.category].filter(Boolean).join(" · ");
   return (
     <li className="flex flex-col gap-1 px-3 py-3">
       <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 text-sm font-medium break-words">{food.name_es}</p>
+        <p className="min-w-0 text-sm font-medium break-words">
+          <Link
+            href={`/alimentos/${food.id}`}
+            className="underline-offset-2 hover:underline"
+            aria-label={`Registrar ${food.name_es}`}
+          >
+            {food.name_es}
+          </Link>
+        </p>
         <p className="shrink-0 text-right text-sm tabular-nums">
           {food.kcal_per_100 === null ? (
             <span className="text-muted-foreground">Sin dato</span>
