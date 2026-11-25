@@ -6,16 +6,27 @@ import { Suspense } from "react";
 
 import { CustomFoodForm } from "@/components/food/custom-food-form";
 import { getCurrentUser } from "@/lib/db/server";
+import { isValidBarcode, normalizeBarcode } from "@/lib/food/barcode";
 
 export const metadata: Metadata = { title: "Crear alimento" };
 
-async function Form() {
+type SearchParams = Promise<{ codigo?: string | string[] }>;
+
+async function Form({ searchParams }: { searchParams: SearchParams }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return <CustomFoodForm />;
+  const { codigo } = await searchParams;
+  const raw = normalizeBarcode(
+    Array.isArray(codigo) ? (codigo[0] ?? "") : (codigo ?? ""),
+  );
+  return <CustomFoodForm barcode={isValidBarcode(raw) ? raw : undefined} />;
 }
 
-export default function NuevoAlimentoPage() {
+export default function NuevoAlimentoPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 p-4 pt-[max(env(safe-area-inset-top),1rem)]">
       <div>
@@ -31,7 +42,7 @@ export default function NuevoAlimentoPage() {
         </p>
       </div>
       <Suspense>
-        <Form />
+        <Form searchParams={searchParams} />
       </Suspense>
     </main>
   );
