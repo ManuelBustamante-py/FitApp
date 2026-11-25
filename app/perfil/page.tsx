@@ -58,6 +58,15 @@ export default function ProfilePage() {
           Fórmula de TMB, semana tipo y ajustes por fecha
         </span>
       </Link>
+      <Link
+        href="/fuentes"
+        className="hover:bg-muted rounded-lg border px-3 py-3 text-sm font-medium"
+      >
+        Fuentes y créditos
+        <span className="text-muted-foreground block text-xs font-normal">
+          Origen y licencias de los datos de alimentos
+        </span>
+      </Link>
     </main>
   );
 }
