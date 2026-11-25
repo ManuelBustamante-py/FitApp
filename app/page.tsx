@@ -1,4 +1,4 @@
-import { Activity, House, Scale, User, Utensils } from "lucide-react";
+import { Activity, House, Scale, Search, User, Utensils } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const navItems = [
   { label: "Hoy", icon: House },
   { label: "Comidas", icon: Utensils },
+  { label: "Alimentos", icon: Search, href: "/alimentos" },
   { label: "Ejercicio", icon: Activity, href: "/ejercicio" },
   { label: "Peso", icon: Scale, href: "/peso" },
 ] as const;
@@ -57,7 +58,7 @@ export default function Home() {
         aria-label="Navegación principal"
         className="bg-background sticky bottom-0 border-t pb-[env(safe-area-inset-bottom)]"
       >
-        <ul className="grid grid-cols-4">
+        <ul className="grid grid-cols-5">
           {navItems.map((item) => {
             const { label, icon: Icon } = item;
             const className =
