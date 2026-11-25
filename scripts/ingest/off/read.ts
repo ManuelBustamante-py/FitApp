@@ -77,14 +77,76 @@ export function productFromRecord(record: Record<string, string>): OffRawProduct
   };
 }
 
-/** Producto desde un objeto JSON de OFF (nutriments anidado, countries_tags como arreglo). */
+/** Nombre de nutriente del formato nuevo de OFF → clave *_100g que espera normalize.ts. */
+const NUEVO_A_CLAVE: Record<string, (typeof NUTRIMENT_KEYS)[number]> = {
+  "energy-kcal": "energy-kcal_100g",
+  "energy-kj": "energy-kj_100g",
+  energy: "energy_100g", // en este formato "energy" viene en kJ
+  proteins: "proteins_100g",
+  fat: "fat_100g",
+  "saturated-fat": "saturated-fat_100g",
+  "trans-fat": "trans-fat_100g",
+  carbohydrates: "carbohydrates_100g",
+  sugars: "sugars_100g",
+  fiber: "fiber_100g",
+  salt: "salt_100g",
+  sodium: "sodium_100g",
+  cholesterol: "cholesterol_100g",
+  alcohol: "alcohol_100g",
+};
+
+/** Lleva un valor a la unidad base de las claves *_100g (g; kcal y kJ no se tocan). */
+function aUnidadBase(value: number, unit: unknown): number {
+  const u = asString(unit).trim().toLowerCase();
+  if (u === "mg") return value / 1e3;
+  if (["µg", "μg", "mcg", "ug"].includes(u)) return value / 1e6;
+  return value;
+}
+
+/**
+ * Nutrientes por 100 g del formato actual de OFF: `nutrition.aggregated_set` (o, si
+ * no viene por 100 g, el primer `input_sets` por 100 g). Cada nutriente es
+ * { value, unit, ... }. En los productos actuales `nutriments` llega vacío.
+ */
+function nutrientesNuevos(obj: Record<string, unknown>): OffRawProduct["nutriments"] {
+  const out: OffRawProduct["nutriments"] = {};
+  const nutrition = obj["nutrition"];
+  if (!nutrition || typeof nutrition !== "object") return out;
+  const n = nutrition as Record<string, unknown>;
+  const sets: unknown[] = [n["aggregated_set"]];
+  if (Array.isArray(n["input_sets"])) sets.push(...n["input_sets"]);
+  for (const set of sets) {
+    if (!set || typeof set !== "object") continue;
+    const s = set as Record<string, unknown>;
+    const nutrients = s["nutrients"];
+    if (s["per"] !== "100g" || !nutrients || typeof nutrients !== "object") continue;
+    for (const [name, key] of Object.entries(NUEVO_A_CLAVE)) {
+      const entry = (nutrients as Record<string, unknown>)[name];
+      if (!entry || typeof entry !== "object") continue;
+      const e = entry as Record<string, unknown>;
+      const v = parseNumber(e["value"]);
+      if (v === undefined) continue;
+      out[key] = Number.isNaN(v) ? v : aUnidadBase(v, e["unit"]);
+    }
+    if (Object.keys(out).length > 0) break;
+  }
+  return out;
+}
+
+/**
+ * Producto desde un objeto JSON de OFF. Nutrientes: `nutriments` con claves *_100g
+ * (forma antigua) y, si no aporta ninguno, `nutrition.aggregated_set` (forma actual).
+ */
 export function productFromJson(obj: Record<string, unknown>): OffRawProduct {
   const source =
     obj["nutriments"] && typeof obj["nutriments"] === "object"
       ? (obj["nutriments"] as Record<string, unknown>)
       : {};
-  const nutriments: OffRawProduct["nutriments"] = {};
+  let nutriments: OffRawProduct["nutriments"] = {};
   for (const key of NUTRIMENT_KEYS) nutriments[key] = parseNumber(source[key]);
+  if (!NUTRIMENT_KEYS.some((k) => nutriments[k] !== undefined)) {
+    nutriments = nutrientesNuevos(obj);
+  }
   const tags = obj["countries_tags"];
   return {
     code: asString(obj["code"]),
