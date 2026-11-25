@@ -1,10 +1,12 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { FoodSearchResult } from "@/lib/food/search-queries";
 
 import { ResultadoAlimento } from "./resultado-alimento";
+
+vi.mock("@/app/comidas/atajos-actions", () => ({ toggleFavorite: async () => {} }));
 
 const base: FoodSearchResult = {
   id: "1",

@@ -6,6 +6,7 @@ import { Suspense } from "react";
 
 import { FuenteAlimento } from "@/components/food/fuente-alimento";
 import { DayBalanceCard } from "@/components/meal/day-balance";
+import { CopyPreviousDay } from "@/components/meal/copy-previous-day";
 import { MacroSummary } from "@/components/meal/macro-summary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDayBalance } from "@/lib/balance/queries";
@@ -54,11 +55,17 @@ async function DayContent({ searchParams }: { searchParams: SearchParams }) {
   const day = requested && isIsoDay(requested) && requested <= today ? requested : today;
   const isToday = day === today;
 
-  const [rows, balance] = await Promise.all([
+  const [rows, balance, previousRows] = await Promise.all([
     listDayMeals(user.id, day),
     getDayBalance(user.id, day),
+    listDayMeals(user.id, shiftDay(day, -1)),
   ]);
   const { meals, totals } = groupDay(rows);
+  // Comidas del día anterior que se pueden copiar: solo las que este día aún no tiene.
+  const present = new Set(meals.map((m) => m.type));
+  const copyOptions = groupDay(previousRows)
+    .meals.filter((m) => !present.has(m.type))
+    .map((m) => ({ type: m.type, label: m.label }));
 
   return (
     <>
@@ -113,6 +120,10 @@ async function DayContent({ searchParams }: { searchParams: SearchParams }) {
       >
         <Plus className="size-4" aria-hidden /> Agregar alimento
       </Link>
+
+      {copyOptions.length > 0 ? (
+        <CopyPreviousDay date={day} options={copyOptions} />
+      ) : null}
 
       {meals.length === 0 ? (
         <p className="text-muted-foreground text-sm">
