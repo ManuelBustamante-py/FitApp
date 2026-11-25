@@ -121,7 +121,12 @@ export async function establishSession(
   if (typeof accessToken !== "string" || typeof refreshToken !== "string") {
     return { ok: false };
   }
-  if (!accessToken || !refreshToken || accessToken.length > 8192 || refreshToken.length > 512) {
+  if (
+    !accessToken ||
+    !refreshToken ||
+    accessToken.length > 8192 ||
+    refreshToken.length > 512
+  ) {
     return { ok: false };
   }
   const supabase = await createClient();
