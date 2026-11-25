@@ -1,4 +1,4 @@
-import { Activity, House, Scale, Search, User, Utensils } from "lucide-react";
+import { Activity, ChartLine, House, Scale, Search, User, Utensils } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -12,6 +12,7 @@ const navItems = [
   { label: "Alimentos", icon: Search, href: "/alimentos" },
   { label: "Ejercicio", icon: Activity, href: "/ejercicio" },
   { label: "Peso", icon: Scale, href: "/peso" },
+  { label: "Gráficos", icon: ChartLine, href: "/tendencias" },
 ] as const;
 
 export default function Home() {
@@ -53,7 +54,7 @@ export default function Home() {
         aria-label="Navegación principal"
         className="bg-background sticky bottom-0 border-t pb-[env(safe-area-inset-bottom)]"
       >
-        <ul className="grid grid-cols-5">
+        <ul className="grid grid-cols-6">
           {navItems.map((item) => {
             const { label, icon: Icon } = item;
             const className =
