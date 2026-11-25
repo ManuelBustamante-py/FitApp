@@ -218,3 +218,18 @@ describe("archivos .gz", () => {
     }
   });
 });
+
+describe("formato actual de OFF (nutrition.aggregated_set, nutriments vacío)", () => {
+  it("lee kcal directas y deriva kcal desde kJ cuando solo hay kJ", async () => {
+    const { loaded, foods } = await run(join(FIXTURES, "real-nutrition.jsonl"), [
+      CHILE_TAG,
+    ]);
+    expect(loaded).toEqual(["0021000026326", "7802000010880"]);
+    const mayo = foods.find((f) => f.barcode === "0021000026326")!;
+    expect(mayo.kcalDesdeKj).toBe(false);
+    expect(mayo.nutrients["energy_kcal"]).toBeCloseTo(642.9, 1);
+    const papas = foods.find((f) => f.barcode === "7802000010880")!;
+    expect(papas.kcalDesdeKj).toBe(true);
+    expect(papas.nutrients["energy_kcal"]).toBeCloseTo(2240 / 4.184, 1);
+  });
+});
