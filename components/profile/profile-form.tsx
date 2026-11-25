@@ -5,6 +5,7 @@ import { useActionState, useEffect, useState, type FormEvent } from "react";
 import { saveProfile, type ProfileFormState } from "@/app/perfil/actions";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
+import { LATAM_COUNTRIES, proposeCountry } from "@/lib/profile/country";
 import {
   ACTIVITY_LEVEL_LABELS,
   ONBOARDING_ACTIVITY_LEVELS,
@@ -17,6 +18,7 @@ export interface ProfileFormDefaults {
   birthDate: string;
   heightCm: string;
   timezone: string;
+  country: string;
   activityLevel: string;
   goalType: string;
   targetWeightKg: string;
@@ -31,22 +33,31 @@ export function ProfileForm({
   defaults,
   timezones,
   mode,
+  countryFromIp = false,
 }: {
   defaults: ProfileFormDefaults;
   timezones: string[];
   mode: "onboarding" | "edit";
+  /** true si el país por defecto salió de la IP; si no, se propone desde la zona horaria. */
+  countryFromIp?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(saveProfile, INITIAL);
   const [values, setValues] = useState(defaults);
   const [clientErrors, setClientErrors] = useState<FieldErrors | null>(null);
 
-  // En el onboarding la zona horaria se propone desde el navegador.
+  // En el onboarding la zona horaria (y el país, si la IP no lo dio) se proponen desde
+  // el navegador.
   useEffect(() => {
     if (mode !== "onboarding") return;
     const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!detected) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- el valor del navegador no existe en el servidor
-    if (detected) setValues((v) => ({ ...v, timezone: detected }));
-  }, [mode]);
+    setValues((v) => ({
+      ...v,
+      timezone: detected,
+      country: countryFromIp ? v.country : proposeCountry({ timezone: detected }),
+    }));
+  }, [mode, countryFromIp]);
 
   const errors: FieldErrors =
     clientErrors ?? (state.status === "error" ? (state.errors ?? {}) : {});
@@ -162,6 +173,28 @@ export function ProfileForm({
             {zones.map((zone) => (
               <option key={zone} value={zone}>
                 {zone}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field
+          id="country"
+          label="País"
+          hint="Mostramos primero los productos que se venden en tu país."
+          error={errors.country}
+        >
+          <Select
+            id="country"
+            name="country"
+            value={values.country}
+            onChange={set("country")}
+            autoComplete="country"
+            {...aria("country")}
+          >
+            {LATAM_COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
               </option>
             ))}
           </Select>

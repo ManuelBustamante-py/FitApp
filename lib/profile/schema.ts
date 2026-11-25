@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { ageOn, weightForBmi } from "@/lib/calc";
 
+import { LATAM_COUNTRY_CODES } from "./country";
+
 export const SEXES = ["male", "female"] as const;
 export const ONBOARDING_ACTIVITY_LEVELS = [
   "bmr_only",
@@ -85,6 +87,7 @@ export const profileFormSchema = z
     timezone: z
       .string({ error: "Elige tu zona horaria." })
       .refine(isValidTimeZone, "Zona horaria no válida."),
+    country: z.enum(LATAM_COUNTRY_CODES, { error: "Elige tu país." }),
     goalType: z.enum(GOAL_TYPES, { error: "Elige un tipo de meta." }),
     targetWeightKg: z.preprocess(toNumber, z.number().finite().optional()),
     targetBmi: z.preprocess(toNumber, z.number().finite().optional()),
@@ -168,6 +171,7 @@ export const FORM_FIELDS = [
   "heightCm",
   "activityLevel",
   "timezone",
+  "country",
   "goalType",
   "targetWeightKg",
   "targetBmi",

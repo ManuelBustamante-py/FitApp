@@ -13,6 +13,7 @@ import {
 } from "@/lib/recipe/schema";
 import { isUuid } from "@/lib/meal/schema";
 import { searchFoods } from "@/lib/food/search-queries";
+import { getUserCountry } from "@/lib/profile/country-queries";
 
 export type RecipeFormState =
   { status: "idle" } | { status: "error"; message?: string; errors?: RecipeFieldErrors };
@@ -33,7 +34,7 @@ export interface IngredientOption {
 export async function searchIngredients(query: string): Promise<IngredientOption[]> {
   const user = await getCurrentUser();
   if (!user) return [];
-  const foods = await searchFoods(String(query ?? ""), 15);
+  const foods = await searchFoods(String(query ?? ""), 15, await getUserCountry(user.id));
   return foods.map((f) => ({
     id: f.id,
     name: f.name_es,

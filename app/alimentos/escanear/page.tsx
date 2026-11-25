@@ -8,6 +8,7 @@ import { ScanPanel } from "@/components/food/scan-panel";
 import { getCurrentUser } from "@/lib/db/server";
 import { isValidBarcode, normalizeBarcode } from "@/lib/food/barcode";
 import { findFoodByBarcode } from "@/lib/food/barcode-queries";
+import { getUserCountry } from "@/lib/profile/country-queries";
 
 export const metadata: Metadata = { title: "Escanear código de barras" };
 
@@ -25,7 +26,7 @@ async function Escaneo({ searchParams }: { searchParams: SearchParams }) {
   if (raw === "") return <ScanPanel />;
   if (!isValidBarcode(raw)) return <ScanPanel key={raw} initialError />;
 
-  const foodId = await findFoodByBarcode(raw, user.id);
+  const foodId = await findFoodByBarcode(raw, user.id, await getUserCountry(user.id));
   if (foodId) redirect(`/alimentos/${foodId}`);
 
   return (

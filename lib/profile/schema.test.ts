@@ -16,6 +16,7 @@ const valid = {
   heightCm: "165",
   activityLevel: "light",
   timezone: "America/Santiago",
+  country: "CL",
   goalType: "weight",
   targetWeightKg: "60,5",
   targetBmi: "",
@@ -131,7 +132,15 @@ describe("transformaciones", () => {
       birth_date: "1990-05-10",
       height_cm: 165,
       timezone: "America/Santiago",
+      country: "CL",
     });
+  });
+
+  it("exige un país de LatAm", () => {
+    expect(errorsOf({ country: "" }).country).toBe("Elige tu país.");
+    expect(errorsOf({ country: "US" }).country).toBe("Elige tu país.");
+    expect(errorsOf({ country: "cl" }).country).toBe("Elige tu país.");
+    expect(parse({ country: "MX" }).success).toBe(true);
   });
 
   it("reconstruye los valores del formulario desde lo guardado", () => {
@@ -140,6 +149,8 @@ describe("transformaciones", () => {
       birth_date: "1985-01-01",
       height_cm: 180,
       timezone: "UTC",
+      country: null,
+      proposedCountry: "PE",
       level: "moderate",
     };
     expect(
@@ -161,10 +172,12 @@ describe("transformaciones", () => {
       }),
     ).toMatchObject({ goalType: "weight", goalDirection: "lose", weeklyRateKg: "0.5" });
     expect(toFormDefaults({ ...base, goal: null })).toMatchObject({
+      country: "PE",
       goalType: "weight",
       targetWeightKg: "",
       weeklyRateKg: "0.5",
     });
+    expect(toFormDefaults({ ...base, country: "AR", goal: null }).country).toBe("AR");
   });
 });
 

@@ -18,28 +18,47 @@ export const OFF_ATTRIBUTION =
 /** País principal. */
 export const CHILE_TAG = "en:chile";
 
+/**
+ * Países latinoamericanos: etiqueta countries_tags de OFF → código ISO 3166-1 alfa-2.
+ * Es la lista de --latam y la que se guarda en food.countries.
+ */
+export const LATAM_COUNTRY_ISO: Readonly<Record<string, string>> = {
+  "en:chile": "CL",
+  "en:argentina": "AR",
+  "en:bolivia": "BO",
+  "en:brazil": "BR",
+  "en:colombia": "CO",
+  "en:costa-rica": "CR",
+  "en:cuba": "CU",
+  "en:dominican-republic": "DO",
+  "en:ecuador": "EC",
+  "en:el-salvador": "SV",
+  "en:guatemala": "GT",
+  "en:honduras": "HN",
+  "en:mexico": "MX",
+  "en:nicaragua": "NI",
+  "en:panama": "PA",
+  "en:paraguay": "PY",
+  "en:peru": "PE",
+  "en:uruguay": "UY",
+  "en:venezuela": "VE",
+};
+
 /** Países latinoamericanos para --latam (etiquetas countries_tags de OFF). */
-export const LATAM_COUNTRY_TAGS: readonly string[] = [
-  "en:chile",
-  "en:argentina",
-  "en:bolivia",
-  "en:brazil",
-  "en:colombia",
-  "en:costa-rica",
-  "en:cuba",
-  "en:dominican-republic",
-  "en:ecuador",
-  "en:el-salvador",
-  "en:guatemala",
-  "en:honduras",
-  "en:mexico",
-  "en:nicaragua",
-  "en:panama",
-  "en:paraguay",
-  "en:peru",
-  "en:uruguay",
-  "en:venezuela",
-];
+export const LATAM_COUNTRY_TAGS: readonly string[] = Object.keys(LATAM_COUNTRY_ISO);
+
+/**
+ * Códigos ISO alfa-2 (ordenados, sin repetir) de los países LatAm reconocidos en
+ * countries_tags; null si no hay ninguno. Las etiquetas de otros países se ignoran.
+ */
+export function latamCountryCodes(tags: readonly string[]): string[] | null {
+  const codes = new Set<string>();
+  for (const tag of tags) {
+    const code = LATAM_COUNTRY_ISO[tag.trim().toLowerCase()];
+    if (code) codes.add(code);
+  }
+  return codes.size > 0 ? [...codes].sort() : null;
+}
 
 /** Límites de validación. */
 export const MAX_KCAL_100G = 900;
@@ -83,6 +102,8 @@ export interface OffFood {
   nutrients: Record<string, number>;
   /** true si las kcal salieron de kJ ÷ 4,184. */
   kcalDesdeKj: boolean;
+  /** Países LatAm del producto (ISO alfa-2) para food.countries; null si ninguno. */
+  countries: string[] | null;
 }
 
 export type InvalidReason =
@@ -257,6 +278,7 @@ export function processProduct(
       basis: isLiquid(raw.quantity) ? "per_100ml" : "per_100g",
       nutrients,
       kcalDesdeKj,
+      countries: latamCountryCodes(raw.countriesTags),
     },
   };
 }

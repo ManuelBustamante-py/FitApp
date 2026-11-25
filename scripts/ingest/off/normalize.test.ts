@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   CHILE_TAG,
+  LATAM_COUNTRY_ISO,
   LATAM_COUNTRY_TAGS,
+  latamCountryCodes,
   processProduct,
   type OffRawProduct,
 } from "./normalize.ts";
@@ -44,6 +46,7 @@ describe("processProduct", () => {
       brand: "Marca A",
       basis: "per_100g",
       kcalDesdeKj: false,
+      countries: ["CL"],
     });
     expect(result.food.nutrients).toEqual({
       energy_kcal: 480,
@@ -78,6 +81,42 @@ describe("processProduct", () => {
       });
       expect(f.category).toBe("Galletas y brownies");
       expect(f.etiquetasSinMapear).toEqual([]);
+    });
+  });
+
+  describe("países del producto (food.countries)", () => {
+    it("mapea cada etiqueta LatAm a su código ISO alfa-2 en mayúsculas", () => {
+      expect(LATAM_COUNTRY_TAGS).toHaveLength(19);
+      expect(LATAM_COUNTRY_TAGS[0]).toBe(CHILE_TAG);
+      for (const tag of LATAM_COUNTRY_TAGS) {
+        expect(LATAM_COUNTRY_ISO[tag]).toMatch(/^[A-Z]{2}$/);
+      }
+      expect(new Set(Object.values(LATAM_COUNTRY_ISO)).size).toBe(19);
+      expect(LATAM_COUNTRY_ISO["en:mexico"]).toBe("MX");
+      expect(LATAM_COUNTRY_ISO["en:dominican-republic"]).toBe("DO");
+      expect(LATAM_COUNTRY_ISO["en:el-salvador"]).toBe("SV");
+    });
+
+    it("solo guarda países LatAm reconocidos, ordenados y sin repetir", () => {
+      expect(
+        latamCountryCodes(["en:peru", "en:france", "en:chile", "EN:CHILE", "en:spain"]),
+      ).toEqual(["CL", "PE"]);
+      expect(latamCountryCodes(["en:france", "en:world"])).toBeNull();
+      expect(latamCountryCodes([])).toBeNull();
+    });
+
+    it("el producto importado lleva sus países LatAm", () => {
+      const raw = product({
+        countriesTags: ["en:mexico", "en:united-states", "en:chile"],
+      });
+      const result = processProduct(raw, { countries: new Set(LATAM_COUNTRY_TAGS) });
+      expect(result.kind === "ok" && result.food.countries).toEqual(["CL", "MX"]);
+    });
+
+    it("null si el país aceptado no es LatAm (--countries propio)", () => {
+      const raw = product({ countriesTags: ["en:spain"] });
+      const result = processProduct(raw, { countries: new Set(["en:spain"]) });
+      expect(result.kind === "ok" && result.food.countries).toBeNull();
     });
   });
 

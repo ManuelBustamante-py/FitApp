@@ -13,6 +13,7 @@ const FOOD: OffFood = {
   basis: "per_100g",
   nutrients: { protein_g: 6, energy_kcal: 480, desconocido: 1 },
   kcalDesdeKj: false,
+  countries: ["CL", "PE"],
 };
 
 describe("carga de Open Food Facts", () => {
@@ -37,6 +38,7 @@ describe("carga de Open Food Facts", () => {
       basis: "per_100g",
       name_en: "Vanilla cookies",
       category: "Galletas y brownies",
+      countries: ["CL", "PE"],
     });
     expect(OFF_LICENSE).toContain("ODbL");
   });

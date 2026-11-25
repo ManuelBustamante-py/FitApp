@@ -4,6 +4,8 @@ import { Suspense } from "react";
 
 import { ProfileForm } from "@/components/profile/profile-form";
 import { getCurrentUser } from "@/lib/db/server";
+import { isLatamCountry, normalizeCountry, proposeCountry } from "@/lib/profile/country";
+import { getIpCountry } from "@/lib/profile/country-queries";
 import { getProfileBundle } from "@/lib/profile/queries";
 import { listTimeZones } from "@/lib/profile/timezones";
 
@@ -13,16 +15,19 @@ async function OnboardingContent() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (await getProfileBundle(user.id)) redirect("/perfil");
+  const ipCountry = normalizeCountry(await getIpCountry());
 
   return (
     <ProfileForm
       mode="onboarding"
       timezones={listTimeZones()}
+      countryFromIp={isLatamCountry(ipCountry)}
       defaults={{
         sex: "",
         birthDate: "",
         heightCm: "",
         timezone: "America/Santiago",
+        country: proposeCountry({ ipCountry, timezone: "America/Santiago" }),
         activityLevel: "sedentary",
         goalType: "weight",
         targetWeightKg: "",
