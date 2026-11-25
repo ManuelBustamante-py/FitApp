@@ -9,6 +9,7 @@ import { DayBalanceCard } from "@/components/meal/day-balance";
 import { CopyPreviousDay } from "@/components/meal/copy-previous-day";
 import { MacroSummary } from "@/components/meal/macro-summary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MIN_SAFE_INTAKE_KCAL, type Sex } from "@/lib/calc";
 import { getDayBalance } from "@/lib/balance/queries";
 import { getCurrentUser } from "@/lib/db/server";
 import { groupDay, shiftDay } from "@/lib/meal/day";
@@ -102,7 +103,12 @@ async function DayContent({ searchParams }: { searchParams: SearchParams }) {
       </nav>
 
       {balance ? (
-        <DayBalanceCard day={balance.day} week={balance.week} isToday={isToday} />
+        <DayBalanceCard
+          day={balance.day}
+          week={balance.week}
+          isToday={isToday}
+          minKcal={MIN_SAFE_INTAKE_KCAL[bundle.profile.sex as Sex]}
+        />
       ) : null}
 
       <Card>

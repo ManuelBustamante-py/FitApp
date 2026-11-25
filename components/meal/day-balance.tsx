@@ -18,10 +18,13 @@ export function DayBalanceCard({
   day,
   week,
   isToday,
+  minKcal,
 }: {
   day: DayBalance;
   week: WeekSummary;
   isToday: boolean;
+  /** Ingesta mínima prudente según el sexo del perfil (kcal). */
+  minKcal: number;
 }) {
   if (!day.energy) {
     return (
@@ -102,10 +105,11 @@ export function DayBalanceCard({
             : ""}
           .
         </p>
-        {day.belowMinimum && !isToday ? (
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            La ingesta de este día quedó bajo el mínimo prudente. Si se repite, consulta a
-            un profesional de la salud.
+        {day.belowMinimum ? (
+          <p role="alert" className="text-sm text-amber-700 dark:text-amber-400">
+            {isToday
+              ? `Llevas menos de ${nfKcal.format(minKcal)} kcal hoy, el mínimo prudente. Si es todo lo que comerás, es muy poco.`
+              : `La ingesta de este día quedó bajo ${nfKcal.format(minKcal)} kcal, el mínimo prudente. Si se repite, consulta a un profesional de la salud.`}
           </p>
         ) : null}
         {day.target?.limitedToMinimum ? (
