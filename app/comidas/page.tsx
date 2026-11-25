@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { FuenteAlimento } from "@/components/food/fuente-alimento";
+import { DayBalanceCard } from "@/components/meal/day-balance";
 import { MacroSummary } from "@/components/meal/macro-summary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getDayBalance } from "@/lib/balance/queries";
 import { getCurrentUser } from "@/lib/db/server";
 import { groupDay, shiftDay } from "@/lib/meal/day";
 import { listDayMeals } from "@/lib/meal/queries";
@@ -52,7 +54,11 @@ async function DayContent({ searchParams }: { searchParams: SearchParams }) {
   const day = requested && isIsoDay(requested) && requested <= today ? requested : today;
   const isToday = day === today;
 
-  const { meals, totals } = groupDay(await listDayMeals(user.id, day));
+  const [rows, balance] = await Promise.all([
+    listDayMeals(user.id, day),
+    getDayBalance(user.id, day),
+  ]);
+  const { meals, totals } = groupDay(rows);
 
   return (
     <>
@@ -87,6 +93,10 @@ async function DayContent({ searchParams }: { searchParams: SearchParams }) {
           </Link>
         )}
       </nav>
+
+      {balance ? (
+        <DayBalanceCard day={balance.day} week={balance.week} isToday={isToday} />
+      ) : null}
 
       <Card>
         <CardHeader>
