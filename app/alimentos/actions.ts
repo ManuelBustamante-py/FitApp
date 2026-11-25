@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient, getCurrentUser } from "@/lib/db/server";
+import { isValidBarcode, normalizeBarcode } from "@/lib/food/barcode";
 import { parseCustomFoodForm, type CustomFoodFieldErrors } from "@/lib/food/custom";
 
 export type CustomFoodFormState =
@@ -30,6 +31,8 @@ export async function createCustomFood(
   const parsed = parseCustomFoodForm(formData);
   if (!parsed.success) return { status: "error", errors: parsed.errors };
   const values = parsed.data;
+  const rawBarcode = normalizeBarcode(String(formData.get("barcode") ?? ""));
+  const barcode = isValidBarcode(rawBarcode) ? rawBarcode : null;
 
   const supabase = await createClient();
   const codes = Object.keys(values.nutrients);
@@ -44,6 +47,7 @@ export async function createCustomFood(
     .insert({
       name_es: values.name,
       brand: values.brand,
+      barcode,
       basis: values.basis,
       source: "user",
       owner_user_id: user.id,

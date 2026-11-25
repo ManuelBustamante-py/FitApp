@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus, Search } from "lucide-react";
+import { ArrowLeft, Plus, ScanBarcode, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -170,6 +170,12 @@ export default function AlimentosPage({ searchParams }: { searchParams: SearchPa
           <Search className="size-4" aria-hidden /> Buscar
         </button>
       </form>
+      <Link
+        href="/alimentos/escanear"
+        className="bg-secondary text-secondary-foreground inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium"
+      >
+        <ScanBarcode className="size-4" aria-hidden /> Escanear código de barras
+      </Link>
       <Link
         href="/alimentos/nuevo"
         className="text-primary inline-flex items-center gap-1 self-start text-sm font-medium"

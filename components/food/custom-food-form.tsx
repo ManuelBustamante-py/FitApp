@@ -17,7 +17,7 @@ const INITIAL: CustomFoodFormState = { status: "idle" };
 /** Campos de nutrientes con sangría, como en la etiqueta chilena. */
 const NESTED = new Set(["saturated", "trans", "sugar", "fiber"]);
 
-export function CustomFoodForm() {
+export function CustomFoodForm({ barcode }: { barcode?: string }) {
   const [state, formAction, pending] = useActionState(createCustomFood, INITIAL);
   const [clientErrors, setClientErrors] = useState<CustomFoodFieldErrors | null>(null);
   const [basis, setBasis] = useState("per_100g");
@@ -50,6 +50,14 @@ export function CustomFoodForm() {
       noValidate
       className="flex flex-col gap-4"
     >
+      {barcode ? (
+        <>
+          <input type="hidden" name="barcode" value={barcode} />
+          <p className="bg-muted rounded-lg px-3 py-2 text-sm">
+            Código de barras: <span className="tabular-nums">{barcode}</span>
+          </p>
+        </>
+      ) : null}
       <Field id="name" label="Nombre" error={errors.name}>
         <Input
           id="name"
