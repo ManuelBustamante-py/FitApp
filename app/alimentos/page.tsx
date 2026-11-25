@@ -176,6 +176,12 @@ export default function AlimentosPage({ searchParams }: { searchParams: SearchPa
       >
         <Plus className="size-4" aria-hidden /> Crear alimento
       </Link>
+      <Link
+        href="/recetas"
+        className="text-primary inline-flex items-center gap-1 self-start text-sm font-medium"
+      >
+        <Plus className="size-4" aria-hidden /> Mis recetas
+      </Link>
       <Suspense>
         <Results searchParams={searchParams} />
       </Suspense>
