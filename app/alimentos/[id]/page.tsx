@@ -12,6 +12,7 @@ import { getCurrentUser } from "@/lib/db/server";
 import { basisLabel } from "@/lib/food/search";
 import { defaultMealType, hourIn } from "@/lib/meal/meal-types";
 import { getFoodForLogging } from "@/lib/meal/queries";
+import { getRecipeIdByFood } from "@/lib/recipe/queries";
 import { listFavoriteIds } from "@/lib/meal/shortcuts-queries";
 import { getProfileBundle } from "@/lib/profile/queries";
 import { todayIn } from "@/lib/weight/entries";
@@ -31,9 +32,10 @@ async function FoodContent({ params }: { params: Params }) {
   if (!bundle) redirect("/onboarding");
 
   const { id } = await params;
-  const [food, favoriteIds] = await Promise.all([
+  const [food, favoriteIds, recipeId] = await Promise.all([
     getFoodForLogging(id),
     listFavoriteIds(user.id),
+    getRecipeIdByFood(id),
   ]);
   if (!food) notFound();
 
@@ -57,6 +59,14 @@ async function FoodContent({ params }: { params: Params }) {
         </div>
         {details && <p className="text-muted-foreground text-sm">{details}</p>}
         <FuenteAlimento source={food.source} />
+        {recipeId ? (
+          <Link
+            href={`/recetas/${recipeId}`}
+            className="text-primary self-start text-sm font-medium"
+          >
+            Editar receta
+          </Link>
+        ) : null}
       </div>
 
       <Card>
