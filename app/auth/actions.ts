@@ -107,3 +107,27 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+/**
+ * Guarda en cookies, desde el servidor, la sesión que trae el enlace mágico
+ * (flujo implícito, tokens en el fragmento de /auth/callback). Así la sesión se
+ * escribe igual que en el login con contraseña, con Set-Cookie del servidor, y
+ * no desde el navegador con document.cookie.
+ */
+export async function establishSession(
+  accessToken: string,
+  refreshToken: string,
+): Promise<{ ok: boolean }> {
+  if (typeof accessToken !== "string" || typeof refreshToken !== "string") {
+    return { ok: false };
+  }
+  if (!accessToken || !refreshToken || accessToken.length > 8192 || refreshToken.length > 512) {
+    return { ok: false };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  return { ok: !error };
+}
