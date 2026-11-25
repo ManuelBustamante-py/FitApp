@@ -11,7 +11,7 @@ export default function LoginPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">FitApp</h1>
         <p className="text-muted-foreground text-sm">
-          Te enviamos un enlace a tu email para entrar. Sin contraseñas.
+          Entra con tu contraseña o con un enlace a tu email.
         </p>
       </div>
       <Suspense>

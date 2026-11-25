@@ -1,6 +1,6 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 
-const OTP_TYPES: EmailOtpType[] = ["email", "magiclink", "signup", "invite"];
+const OTP_TYPES: EmailOtpType[] = ["email", "magiclink", "signup", "invite", "recovery"];
 
 /**
  * Extrae el token de un enlace del correo de Supabase

@@ -29,7 +29,7 @@ describe("parseMagicLink", () => {
   });
 
   it("rechaza tipos no permitidos, faltantes y texto que no es URL", () => {
-    expect(parseMagicLink(link("token=t&type=recovery"), SUPABASE)).toBeNull();
+    expect(parseMagicLink(link("token=t&type=email_change"), SUPABASE)).toBeNull();
     expect(parseMagicLink(link("type=magiclink"), SUPABASE)).toBeNull();
     expect(parseMagicLink(link("token=t"), SUPABASE)).toBeNull();
     expect(parseMagicLink("hola", SUPABASE)).toBeNull();
