@@ -2,9 +2,21 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { KcalRing } from "@/components/dashboard/kcal-ring";
+import {
+  GoalProjectionCard,
+  IntakeAlertNote,
+} from "@/components/dashboard/goal-projection";
 import { MacroBars } from "@/components/dashboard/macro-bars";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getDayBalance } from "@/lib/balance/queries";
+import { addDays } from "@/lib/balance/compute";
+import {
+  intakeAlert,
+  PROJECTION_WINDOW_DAYS,
+  projectGoal,
+} from "@/lib/balance/projection";
+import { getBalanceRange, getDayBalance } from "@/lib/balance/queries";
+import { trendWeights, type Sex } from "@/lib/calc";
+import { listWeightsInRange } from "@/lib/trends/queries";
 import { getCurrentUser } from "@/lib/db/server";
 import { getProfileBundle } from "@/lib/profile/queries";
 import { todayIn } from "@/lib/weight/entries";
@@ -20,7 +32,12 @@ export async function Dashboard() {
   if (!bundle) redirect("/onboarding");
 
   const today = todayIn(bundle.profile.timezone);
-  const balance = await getDayBalance(user.id, today);
+  const recentFrom = addDays(today, -(PROJECTION_WINDOW_DAYS - 1));
+  const [balance, recent, weights] = await Promise.all([
+    getDayBalance(user.id, today),
+    getBalanceRange(user.id, recentFrom, today),
+    listWeightsInRange(user.id, recentFrom, today),
+  ]);
   if (!balance) {
     return (
       <Card>
@@ -53,6 +70,21 @@ export async function Dashboard() {
       </Card>
     );
   }
+
+  // Peso de tendencia actual; sin registros recientes, el peso vigente del día.
+  const trend = trendWeights(
+    weights.map((w) => ({ day: w.measured_at.slice(0, 10), weightKg: w.weight_kg })),
+  );
+  const currentKg =
+    trend.length > 0 ? trend[trend.length - 1].trendKg : day.energy.weightKg;
+  const recentDays = recent ?? [];
+  const projection = projectGoal({
+    currentKg,
+    goalKg: bundle.goal?.target_weight_kg ?? null,
+    days: recentDays,
+    today,
+  });
+  const alert = intakeAlert(recentDays, bundle.profile.sex as Sex, today);
 
   const goalKcal = day.target?.kcal ?? day.energy.tdee;
   const weekText =
@@ -99,6 +131,10 @@ export async function Dashboard() {
           ) : null}
         </CardContent>
       </Card>
+
+      <IntakeAlertNote alert={alert} />
+
+      <GoalProjectionCard projection={projection} />
 
       <Card>
         <CardHeader>
