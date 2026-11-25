@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 
+import { establishSession } from "@/app/auth/actions";
 import { safeNextPath } from "@/lib/auth/safe-next";
-import { createClient } from "@/lib/db/client";
 
 function goToLogin(error: string, next: string) {
   const params = new URLSearchParams({ error });
@@ -29,13 +29,14 @@ export function MagicLinkCallback() {
       return;
     }
 
-    createClient()
-      .auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-      .then(({ error }) => {
-        if (error) goToLogin("enlace", next);
-        // Recarga completa para que el servidor lea las cookies de sesión.
+    // El servidor guarda la sesión en cookies (Set-Cookie), igual que el login
+    // con contraseña. Luego, recarga completa para que todo lea esas cookies.
+    establishSession(accessToken, refreshToken)
+      .then(({ ok }) => {
+        if (!ok) goToLogin("enlace", next);
         else window.location.replace(next);
-      });
+      })
+      .catch(() => goToLogin("enlace", next));
   }, []);
 
   return (
