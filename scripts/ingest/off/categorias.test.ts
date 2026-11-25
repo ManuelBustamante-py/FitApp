@@ -55,6 +55,11 @@ describe("mapeo de categorías de Open Food Facts", () => {
       ["es:pan", "en:breads"],
       ["es:leches-saborizadas", "en:flavoured-milks"],
       ["es:jugos-de-fruta", "en:fruit-juices"],
+      ["es:helados", "en:ice-creams"],
+      ["es:pescados", "en:fishes"],
+      ["es:barras-de-proteína", "en:protein-bars"],
+      ["es:barras-de-proteinas", "en:protein-bars"],
+      ["es:cereales-para-desayuno", "en:breakfast-cereals"],
     ];
     for (const [es, en] of pares) {
       expect(categoriaDeEtiqueta(es)).not.toBeNull();

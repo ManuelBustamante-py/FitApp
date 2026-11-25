@@ -356,6 +356,11 @@ export const MAPEO_CATEGORIAS_OFF: Record<string, string> = {
   "leches-saborizadas": "Flavored milk, whole", // = flavoured-milks; aprox.
   "jugos-de-fruta": "Other fruit juice", // = fruit-juices
   "dulces-untables": "Jams, syrups, toppings", // aprox.: untables dulces
+  helados: "Ice cream and frozen dairy desserts", // = ice-creams
+  pescados: "Fish", // = fishes
+  "barras-de-proteina": "Nutrition bars", // = protein-bars
+  "barras-de-proteinas": "Nutrition bars", // = protein-bars
+  "cereales-para-desayuno": CEREAL_ALTO, // = breakfast-cereals; aprox.
 };
 
 /**
