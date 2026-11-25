@@ -1,11 +1,10 @@
 "use server";
 
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 
 import { parseMagicLink } from "@/lib/auth/magic-link";
+import { callbackUrl, createOtpSender, requestOrigin } from "@/lib/auth/otp-sender";
+import { emailSchema } from "@/lib/auth/password";
 import { safeNextPath } from "@/lib/auth/safe-next";
 import { createClient } from "@/lib/db/server";
 import { publicEnv } from "@/lib/env";
@@ -16,29 +15,6 @@ export type MagicLinkState =
   | { status: "error"; message: string };
 
 export type PasteLinkState = { status: "idle" } | { status: "error"; message: string };
-
-const emailSchema = z.email("Ingresa un email válido.");
-
-/**
- * Cliente solo para pedir el enlace, con flujo implícito: no guarda un
- * code_verifier en cookies, así el enlace funciona aunque se abra en otro
- * navegador o en la app de correo (el flujo PKCE de @supabase/ssr lo exige).
- * La plantilla por defecto de Supabase no se puede editar sin SMTP propio.
- */
-function createOtpSender() {
-  return createSupabaseClient(
-    publicEnv.NEXT_PUBLIC_SUPABASE_URL,
-    publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    {
-      auth: {
-        flowType: "implicit",
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    },
-  );
-}
 
 export async function sendMagicLink(
   _prev: MagicLinkState,
@@ -53,7 +29,7 @@ export async function sendMagicLink(
   }
 
   const next = safeNextPath(String(formData.get("next") ?? "/"));
-  const origin = (await headers()).get("origin");
+  const origin = await requestOrigin();
   if (!origin) {
     return {
       status: "error",
@@ -64,7 +40,7 @@ export async function sendMagicLink(
   const { error } = await createOtpSender().auth.signInWithOtp({
     email: parsed.data,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      emailRedirectTo: callbackUrl(origin, next),
       shouldCreateUser: true,
     },
   });
@@ -88,7 +64,6 @@ export async function verifyPastedLink(
   _prev: PasteLinkState,
   formData: FormData,
 ): Promise<PasteLinkState> {
-  const next = safeNextPath(String(formData.get("next") ?? "/"));
   const link = parseMagicLink(
     String(formData.get("link") ?? ""),
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
@@ -119,7 +94,12 @@ export async function verifyPastedLink(
     };
   }
 
-  redirect(next);
+  // Un enlace de recuperación lleva a elegir la contraseña nueva.
+  redirect(
+    link.type === "recovery"
+      ? "/cuenta/contrasena"
+      : safeNextPath(String(formData.get("next") ?? "/")),
+  );
 }
 
 export async function signOut() {

@@ -59,6 +59,15 @@ export default function ProfilePage() {
         </span>
       </Link>
       <Link
+        href="/cuenta/contrasena"
+        className="hover:bg-muted rounded-lg border px-3 py-3 text-sm font-medium"
+      >
+        Contraseña
+        <span className="text-muted-foreground block text-xs font-normal">
+          Define o cambia la contraseña para entrar sin enlace
+        </span>
+      </Link>
+      <Link
         href="/fuentes"
         className="hover:bg-muted rounded-lg border px-3 py-3 text-sm font-medium"
       >

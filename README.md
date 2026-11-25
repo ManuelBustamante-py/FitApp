@@ -36,7 +36,8 @@ En el panel del proyecto:
 2. *(Opcional; Supabase exige SMTP propio para editar plantillas)* **Authentication → Emails → Magic Link**: cambiar el enlace de la plantilla por
    `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`
    (`RedirectTo` ya trae `/auth/confirm?next=…`; por eso la URL debe estar en *Redirect URLs*). Así funciona aunque el correo se abra en otro navegador o en la app de correo. Sin este cambio también funciona en cualquier navegador: el enlace se pide con flujo implícito y aterriza en `/auth/callback`, que toma la sesión del fragmento de la URL. Además, en `/login` se puede pegar el enlace del correo sin abrirlo (útil en la PWA instalada, donde los enlaces se abren fuera de la app).
-3. Para regenerar los tipos (`npm run db:types`) hay que iniciar sesión una vez con `npx supabase login`.
+3. **Authentication → Sign In / Providers → Email**: desactivar *Confirm email* para que el registro con contraseña inicie sesión al instante (si queda activo, la app pide confirmar con el enlace del correo). La recuperación de contraseña llega a `/auth/callback` y termina en `/cuenta/contrasena`.
+4. Para regenerar los tipos (`npm run db:types`) hay que iniciar sesión una vez con `npx supabase login`.
 
 ### Base de datos (migraciones)
 
